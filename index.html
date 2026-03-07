@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Видеозвонок с другом</title>
+    <!-- Подключаем стили Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем PeerJS для связи -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Подключаем иконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Отзеркаливаем свою камеру */
+        #local-video-lobby, #local-video-call { transform: scaleX(-1); } 
+    </style>
+</head>
+<body class="bg-gray-950 text-white font-sans selection:bg-blue-500">
+
+    <!-- Всплывающее уведомление -->
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-full shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <span id="toast-msg"></span>
+    </div>
+
+    <!-- Экран ошибки -->
+    <div id="error-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <i class="fas fa-exclamation-circle text-red-500 text-6xl mb-4"></i>
+        <h1 class="text-2xl font-bold mb-2">Упс, проблемка!</h1>
+        <p id="error-msg" class="text-gray-400 max-w-md"></p>
+        <button onclick="location.reload()" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition">
+            <i class="fas fa-sync-alt mr-2"></i> Обновить страницу
+        </button>
+    </div>
+
+    <!-- Лобби (Главный экран) -->
+    <div id="lobby-screen" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            
+            <!-- Камера в лобби -->
+            <div class="relative w-full aspect-video bg-gray-900 rounded-2xl overflow-hidden mb-6 border border-gray-800 shadow-2xl">
+                <video id="local-video-lobby" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                <div id="cam-loading" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-900">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                    <p>Запуск камеры...</p>
+                    <p class="text-xs mt-2 text-gray-400 text-center px-4">Разрешите доступ к камере и микрофону в браузере</p>
+                </div>
+            </div>
+
+            <!-- Ваш ID -->
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl mb-6">
+                <h2 class="text-lg font-semibold mb-2 text-gray-300">Ваш ID для звонка</h2>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 outline-none font-mono text-sm">
+                    <button onclick="copyId()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition flex items-center justify-center w-12 h-12" title="Скопировать">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" id="status-text">Ожидание подключения к сети...</p>
+            </div>
+
+            <!-- Форма звонка -->
+            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-lg font-semibold mb-2 text-gray-300">Позвонить другу</h2>
+                <div class="flex flex-col space-y-3">
+                    <input type="text" id="remote-id" placeholder="Вставьте ID друга сюда..." class="w-full bg-gray-950 border border-gray-700 focus:border-green-500 rounded-xl px-4 py-3 text-gray-100 outline-none transition font-mono text-sm">
+                    <button id="call-btn" onclick="makeCall()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition flex justify-center items-center shadow-lg shadow-green-600/20">
+                        <i class="fas fa-phone mr-2"></i> Позвонить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно: Входящий звонок -->
+    <div id="incoming-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-900 border border-blue-500 rounded-2xl p-6 shadow-2xl w-full max-w-sm animate-pulse">
+            <h2 class="text-xl font-bold text-white flex items-center mb-6">
+                <i class="fas fa-phone-volume mr-3 animate-bounce text-blue-400"></i> Входящий звонок!
+            </h2>
+            <div class="flex space-x-3">
+                <button onclick="answerCall()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-green-500/30">
+                    <i class="fas fa-check mr-1"></i> Принять
+                </button>
+                <button onclick="rejectCall()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-red-500/30">
+                    <i class="fas fa-times mr-1"></i> Отклонить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран активного звонка -->
+    <div id="call-screen" class="hidden min-h-screen bg-black relative overflow-hidden">
+        <video id="remote-video" autoplay playsinline class="absolute inset-0 w-full h-full object-cover"></video>
+        
+        <div class="absolute bottom-24 right-4 sm:bottom-8 sm:right-8 z-20 w-32 h-48 sm:w-48 sm:h-64 rounded-xl overflow-hidden shadow-2xl border-2 border-gray-700 bg-gray-900">
+            <video id="local-video-call" autoplay playsinline muted class="w-full h-full object-cover"></video>
+        </div>
+
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-gray-900/80 backdrop-blur-md px-6 py-4 rounded-full z-30">
+            <button id="btn-mic" onclick="toggleMic()" class="w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition flex items-center justify-center">
+                <i class="fas fa-microphone text-xl"></i>
+            </button>
+            <button id="btn-video" onclick="toggleVideo()" class="w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition flex items-center justify-center">
+                <i class="fas fa-video text-xl"></i>
+            </button>
+            <button onclick="endCall()" class="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white transition flex items-center justify-center hover:scale-105" title="Завершить">
+                <i class="fas fa-phone-slash text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let peer = null;
+        let localStream = null;
+        let currentCall = null;
+        let incomingCallRef = null;
+        let micEnabled = true;
+        let videoEnabled = true;
+
+        const screens = {
+            lobby: document.getElementById('lobby-screen'),
+            call: document.getElementById('call-screen'),
+            error: document.getElementById('error-screen')
+        };
+
+        function showScreen(screenName) {
+            screens.lobby.classList.add('hidden');
+            screens.call.classList.add('hidden');
+            screens.error.classList.add('hidden');
+            screens[screenName].classList.remove('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 3000);
+        }
+
+        async function initApp() {
+            // 1. СНАЧАЛА подключаемся к серверу для генерации ID (не ждем камеру)
+            try {
+                peer = new Peer({
+                    debug: 2,
+                    config: {'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]}
+                });
+
+                peer.on('open', (id) => {
+                    document.getElementById('my-id').value = id;
+                    document.getElementById('status-text').innerText = "✅ Подключено! Отправьте ID другу.";
+                    document.getElementById('status-text').className = "text-xs mt-2 text-green-500";
+                });
+
+                peer.on('call', (call) => {
+                    incomingCallRef = call;
+                    document.getElementById('incoming-modal').classList.remove('hidden');
+                });
+
+                peer.on('error', (err) => {
+                    console.error("Ошибка PeerJS:", err);
+                    document.getElementById('status-text').innerText = "Ошибка сети. Обновите страницу.";
+                    document.getElementById('status-text').className = "text-xs mt-2 text-red-500";
+                    if(err.type !== 'peer-unavailable') {
+                        showToast("Произошла ошибка соединения");
+                    }
+                    resetUI();
+                });
+
+                // Таймер, если генерация зависла из-за блокировок сети
+                setTimeout(() => {
+                    if(document.getElementById('my-id').value === 'Генерация...') {
+                        document.getElementById('status-text').innerText = "⚠️ Сеть друга блокирует подключение. Пусть отключит VPN!";
+                        document.getElementById('status-text').className = "text-xs mt-2 text-yellow-500";
+                    }
+                }, 8000);
+            } catch (err) {
+                console.error("Peer init error", err);
+            }
+
+            // 2. ПАРАЛЛЕЛЬНО запрашиваем камеру и микрофон
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video-lobby').srcObject = localStream;
+                document.getElementById('local-video-call').srcObject = localStream;
+                document.getElementById('cam-loading').style.display = 'none';
+            } catch (err) {
+                console.error(err);
+                showScreen('error');
+                document.getElementById('error-msg').innerText = "Браузер заблокировал доступ к камере или микрофону. Разрешите доступ (значок замка в адресной строке) и обновите страницу.";
+            }
+        }
+
+        function copyId() {
+            const id = document.getElementById('my-id').value;
+            if(id === 'Генерация...') return;
+            navigator.clipboard.writeText(id).then(() => {
+                showToast('Ваш ID скопирован!');
+            }).catch(() => {
+                const input = document.getElementById('my-id');
+                input.select();
+                document.execCommand('copy');
+                showToast('Ваш ID скопирован!');
+            });
+        }
+
+        function setupCallEvents(call) {
+            currentCall = call;
+            
+            call.on('stream', (remoteStream) => {
+                document.getElementById('remote-video').srcObject = remoteStream;
+                showScreen('call'); 
+            });
+
+            call.on('close', () => endCall());
+            call.on('error', () => {
+                showToast('Соединение разорвано');
+                endCall();
+            });
+        }
+
+        function makeCall() {
+            const remoteId = document.getElementById('remote-id').value.trim();
+            const myId = document.getElementById('my-id').value;
+            
+            if (!remoteId) {
+                showToast('Сначала вставьте ID друга!');
+                return;
+            }
+            if (remoteId === myId) {
+                showToast('Вы ввели свой собственный ID!');
+                return;
+            }
+
+            const btn = document.getElementById('call-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Соединение...';
+            btn.disabled = true;
+
+            const call = peer.call(remoteId, localStream);
+            setupCallEvents(call);
+            
+            // Сброс кнопки если друг не ответил
+            setTimeout(() => {
+                if(screens.call.classList.contains('hidden')) {
+                    resetUI();
+                    showToast('Друг не ответил или ID неверный');
+                }
+            }, 15000);
+        }
+
+        function answerCall() {
+            document.getElementById('incoming-modal').classList.add('hidden');
+            if (incomingCallRef && localStream) {
+                incomingCallRef.answer(localStream);
+                setupCallEvents(incomingCallRef);
+                incomingCallRef = null;
+            }
+        }
+
+        function rejectCall() {
+            document.getElementById('incoming-modal').classList.add('hidden');
+            if (incomingCallRef) {
+                incomingCallRef.close();
+                incomingCallRef = null;
+            }
+        }
+
+        function endCall() {
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+            }
+            document.getElementById('remote-video').srcObject = null;
+            resetUI();
+        }
+
+        function resetUI() {
+            showScreen('lobby');
+            const btn = document.getElementById('call-btn');
+            btn.innerHTML = '<i class="fas fa-phone mr-2"></i> Позвонить';
+            btn.disabled = false;
+            document.getElementById('incoming-modal').classList.add('hidden');
+        }
+
+        function toggleMic() {
+            micEnabled = !micEnabled;
+            localStream.getAudioTracks().forEach(track => track.enabled = micEnabled);
+            const btn = document.getElementById('btn-mic');
+            btn.className = `w-14 h-14 rounded-full text-white transition flex items-center justify-center ${micEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}`;
+            btn.innerHTML = `<i class="fas ${micEnabled ? 'fa-microphone' : 'fa-microphone-slash'} text-xl"></i>`;
+        }
+
+        function toggleVideo() {
+            videoEnabled = !videoEnabled;
+            localStream.getVideoTracks().forEach(track => track.enabled = videoEnabled);
+            const btn = document.getElementById('btn-video');
+            btn.className = `w-14 h-14 rounded-full text-white transition flex items-center justify-center ${videoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}`;
+            btn.innerHTML = `<i class="fas ${videoEnabled ? 'fa-video' : 'fa-video-slash'} text-xl"></i>`;
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
