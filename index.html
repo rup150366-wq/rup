@@ -2,305 +2,744 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Видеозвонок с другом</title>
-    <!-- Подключаем стили Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chipmunk Messenger</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Подключаем PeerJS для связи -->
+    <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Подключаем иконки -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        chipmunk: { light: '#f97316', DEFAULT: '#ea580c', dark: '#9a3412', bg: '#1c1917', panel: '#292524' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Отзеркаливаем свою камеру */
-        #local-video-lobby, #local-video-call { transform: scaleX(-1); } 
+        #local-video { transform: scaleX(-1); }
+        #chat-history { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 10px; }
+        
+        /* Темы */
+        body.theme-light { background-color: #f3f4f6; color: #111827; }
+        body.theme-light .bg-panel { background-color: #ffffff; border-color: #e5e7eb; color: #111827; }
+        body.theme-light .text-muted { color: #6b7280; }
+        body.theme-light .input-bg { background-color: #f9fafb; border-color: #d1d5db; color: #111827; }
+        
+        body.theme-dark { background-color: #111827; color: #f9fafb; }
+        body.theme-dark .bg-panel { background-color: #1f2937; border-color: #374151; color: #f9fafb; }
+        body.theme-dark .text-muted { color: #9ca3af; }
+        body.theme-dark .input-bg { background-color: #374151; border-color: #4b5563; color: #f9fafb; }
+
+        body.theme-chipmunk { background-color: #1c1917; color: #f3f4f6; }
+        body.theme-chipmunk .bg-panel { background-color: #292524; border-color: #44403c; color: #f3f4f6; }
+        body.theme-chipmunk .text-muted { color: #a8a29e; }
+        body.theme-chipmunk .input-bg { background-color: #1c1917; border-color: #57534e; color: #f3f4f6; }
     </style>
 </head>
-<body class="bg-gray-950 text-white font-sans selection:bg-blue-500">
+<body class="theme-chipmunk font-sans h-[100dvh] flex flex-col overflow-hidden transition-colors duration-300">
 
-    <!-- Всплывающее уведомление -->
-    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 px-6 py-3 rounded-full shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
-        <span id="toast-msg"></span>
+    <!-- Тосты (Уведомления) -->
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-chipmunk-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center">
+        <i id="toast-icon" class="fas fa-info-circle mr-2"></i>
+        <span id="toast-msg" class="font-medium whitespace-nowrap text-sm"></span>
     </div>
 
-    <!-- Экран ошибки -->
-    <div id="error-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <i class="fas fa-exclamation-circle text-red-500 text-6xl mb-4"></i>
-        <h1 class="text-2xl font-bold mb-2">Упс, проблемка!</h1>
-        <p id="error-msg" class="text-gray-400 max-w-md"></p>
-        <button onclick="location.reload()" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition">
-            <i class="fas fa-sync-alt mr-2"></i> Обновить страницу
-        </button>
-    </div>
-
-    <!-- Лобби (Главный экран) -->
-    <div id="lobby-screen" class="min-h-screen flex flex-col items-center justify-center p-4">
-        <div class="w-full max-w-md">
+    <!-- ЭКРАН 1: АВТОРИЗАЦИЯ -->
+    <div id="screen-auth" class="absolute inset-0 flex flex-col items-center justify-center p-4 z-40 bg-panel">
+        <div class="w-full max-w-sm space-y-6 text-center">
+            <div class="w-24 h-24 bg-chipmunk rounded-full flex items-center justify-center mx-auto text-5xl shadow-lg shadow-chipmunk/40 mb-2 animate-bounce">
+                🐿️
+            </div>
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-chipmunk">Chipmunk</h1>
+            <p class="text-muted text-sm">Безопасный P2P мессенджер</p>
             
-            <!-- Камера в лобби -->
-            <div class="relative w-full aspect-video bg-gray-900 rounded-2xl overflow-hidden mb-6 border border-gray-800 shadow-2xl">
-                <video id="local-video-lobby" autoplay playsinline muted class="w-full h-full object-cover"></video>
-                <div id="cam-loading" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-900">
-                    <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
-                    <p>Запуск камеры...</p>
-                    <p class="text-xs mt-2 text-gray-400 text-center px-4">Разрешите доступ к камере и микрофону в браузере</p>
+            <form id="auth-form" class="space-y-4 mt-8" onsubmit="loginUser(event)">
+                <div class="text-left">
+                    <label class="block text-xs font-semibold text-muted uppercase tracking-wider mb-2">Ваше имя (Никнейм)</label>
+                    <input type="text" id="auth-username" required placeholder="Например: Alex99" class="w-full input-bg rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-chipmunk transition">
                 </div>
-            </div>
-
-            <!-- Ваш ID -->
-            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl mb-6">
-                <h2 class="text-lg font-semibold mb-2 text-gray-300">Ваш ID для звонка</h2>
-                <div class="flex items-center space-x-2">
-                    <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 outline-none font-mono text-sm">
-                    <button onclick="copyId()" class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition flex items-center justify-center w-12 h-12" title="Скопировать">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </div>
-                <p class="text-xs text-gray-500 mt-2" id="status-text">Ожидание подключения к сети...</p>
-            </div>
-
-            <!-- Форма звонка -->
-            <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-                <h2 class="text-lg font-semibold mb-2 text-gray-300">Позвонить другу</h2>
-                <div class="flex flex-col space-y-3">
-                    <input type="text" id="remote-id" placeholder="Вставьте ID друга сюда..." class="w-full bg-gray-950 border border-gray-700 focus:border-green-500 rounded-xl px-4 py-3 text-gray-100 outline-none transition font-mono text-sm">
-                    <button id="call-btn" onclick="makeCall()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition flex justify-center items-center shadow-lg shadow-green-600/20">
-                        <i class="fas fa-phone mr-2"></i> Позвонить
-                    </button>
-                </div>
-            </div>
+                <button type="submit" class="w-full bg-chipmunk hover:bg-chipmunk-light text-white font-bold py-3 rounded-xl transition shadow-lg flex justify-center items-center">
+                    Войти в систему <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </form>
+            <p class="text-xs text-muted mt-4">Регистрация не требует пароля. Данные сохраняются только на вашем устройстве.</p>
         </div>
     </div>
 
-    <!-- Модальное окно: Входящий звонок -->
-    <div id="incoming-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-900 border border-blue-500 rounded-2xl p-6 shadow-2xl w-full max-w-sm animate-pulse">
-            <h2 class="text-xl font-bold text-white flex items-center mb-6">
-                <i class="fas fa-phone-volume mr-3 animate-bounce text-blue-400"></i> Входящий звонок!
-            </h2>
-            <div class="flex space-x-3">
-                <button onclick="answerCall()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-green-500/30">
-                    <i class="fas fa-check mr-1"></i> Принять
-                </button>
-                <button onclick="rejectCall()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-red-500/30">
-                    <i class="fas fa-times mr-1"></i> Отклонить
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Экран активного звонка -->
-    <div id="call-screen" class="hidden min-h-screen bg-black relative overflow-hidden">
-        <video id="remote-video" autoplay playsinline class="absolute inset-0 w-full h-full object-cover"></video>
+    <!-- ЭКРАН 2: ГЛАВНЫЙ ИНТЕРФЕЙС (ПРИЛОЖЕНИЕ) -->
+    <div id="screen-app" class="hidden flex-1 flex flex-col h-full relative">
         
-        <div class="absolute bottom-24 right-4 sm:bottom-8 sm:right-8 z-20 w-32 h-48 sm:w-48 sm:h-64 rounded-xl overflow-hidden shadow-2xl border-2 border-gray-700 bg-gray-900">
-            <video id="local-video-call" autoplay playsinline muted class="w-full h-full object-cover"></video>
-        </div>
+        <!-- Шапка приложения -->
+        <header class="bg-panel border-b p-3 sm:p-4 shadow-sm flex justify-between items-center z-20 flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                <div id="my-avatar-display" class="w-10 h-10 bg-chipmunk rounded-full flex items-center justify-center text-xl shadow-md cursor-pointer" onclick="openSettings()">
+                    🐿️
+                </div>
+                <div class="overflow-hidden">
+                    <h1 id="my-name-display" class="text-base sm:text-lg font-bold truncate">Имя пользователя</h1>
+                    <p id="connection-status" class="text-xs text-muted flex items-center truncate">
+                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-1 animate-pulse"></span> Подключение...
+                    </p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="openSettings()" class="w-10 h-10 rounded-full input-bg flex items-center justify-center hover:bg-chipmunk hover:text-white transition">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
 
-        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-gray-900/80 backdrop-blur-md px-6 py-4 rounded-full z-30">
-            <button id="btn-mic" onclick="toggleMic()" class="w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition flex items-center justify-center">
-                <i class="fas fa-microphone text-xl"></i>
-            </button>
-            <button id="btn-video" onclick="toggleVideo()" class="w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition flex items-center justify-center">
-                <i class="fas fa-video text-xl"></i>
-            </button>
-            <button onclick="endCall()" class="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white transition flex items-center justify-center hover:scale-105" title="Завершить">
-                <i class="fas fa-phone-slash text-xl"></i>
-            </button>
+        <!-- Основная область: Список друзей ИЛИ Чат -->
+        <main class="flex-1 relative flex overflow-hidden">
+            
+            <!-- ВКЛАДКА: КОНТАКТЫ -->
+            <div id="view-contacts" class="absolute inset-0 flex flex-col p-4 overflow-y-auto w-full max-w-md mx-auto">
+                
+                <!-- Мой ID для копирования -->
+                <div class="bg-panel rounded-2xl p-4 shadow-md mb-6 border">
+                    <h2 class="text-sm font-semibold mb-2 text-muted uppercase tracking-wider">Мой системный ID</h2>
+                    <div class="flex items-center space-x-2 relative">
+                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 input-bg rounded-lg px-3 py-2 outline-none font-mono text-xs w-full">
+                        <button onclick="copyId()" class="bg-chipmunk text-white p-2 rounded-lg hover:bg-chipmunk-light transition shadow-sm">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-muted mt-2">Отправьте этот длинный код другу, чтобы он добавил вас.</p>
+                </div>
+
+                <!-- Добавление друга -->
+                <div class="bg-panel rounded-2xl p-4 shadow-md mb-6 border">
+                    <h2 class="text-sm font-semibold mb-3 text-muted uppercase tracking-wider">Добавить друга</h2>
+                    <div class="space-y-3">
+                        <input type="text" id="new-friend-name" placeholder="Имя друга (для себя)" class="w-full input-bg rounded-lg px-3 py-2 outline-none text-sm">
+                        <input type="text" id="new-friend-id" placeholder="Вставьте длинный ID друга..." class="w-full input-bg rounded-lg px-3 py-2 outline-none font-mono text-xs">
+                        <button onclick="addFriend()" class="w-full bg-stone-700 hover:bg-stone-600 text-white font-medium py-2 rounded-lg transition text-sm flex items-center justify-center">
+                            <i class="fas fa-user-plus mr-2"></i> Сохранить контакт
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Список контактов -->
+                <div>
+                    <h2 class="text-sm font-semibold mb-3 text-muted uppercase tracking-wider px-2">Ваши контакты</h2>
+                    <div id="friends-list" class="space-y-2">
+                        <!-- Контакты генерируются через JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ВКЛАДКА: ЧАТ -->
+            <div id="view-chat" class="hidden absolute inset-0 flex flex-col z-10 bg-inherit w-full">
+                
+                <!-- Шапка чата -->
+                <div class="bg-panel border-b p-3 flex justify-between items-center shadow-sm">
+                    <div class="flex items-center">
+                        <button onclick="closeChat()" class="mr-3 w-8 h-8 rounded-full input-bg flex items-center justify-center">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div id="chat-header-avatar" class="w-8 h-8 bg-stone-700 rounded-full flex items-center justify-center text-sm mr-2">👤</div>
+                        <h2 id="chat-header-name" class="font-bold text-sm sm:text-base truncate">Собеседник</h2>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="startCall('audio')" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full input-bg text-green-500 flex items-center justify-center hover:bg-stone-200 dark:hover:bg-stone-700">
+                            <i class="fas fa-phone-alt"></i>
+                        </button>
+                        <button onclick="startCall('video')" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full input-bg text-chipmunk-light flex items-center justify-center hover:bg-stone-200 dark:hover:bg-stone-700">
+                            <i class="fas fa-video"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- История сообщений -->
+                <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div class="flex justify-center my-2">
+                        <span class="bg-panel text-muted text-[10px] px-3 py-1 rounded-full border shadow-sm text-center">
+                            P2P шифрование активно 🔒
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Ввод текста -->
+                <div class="bg-panel border-t p-2 sm:p-3 flex-shrink-0">
+                    <form id="chat-form" onsubmit="sendMessage(event)" class="flex items-end space-x-2 max-w-4xl mx-auto">
+                        <textarea id="chat-input" rows="1" placeholder="Сообщение..." class="flex-1 input-bg rounded-xl px-4 py-3 text-sm outline-none transition resize-none max-h-32 min-h-[44px]"></textarea>
+                        <button type="submit" class="bg-chipmunk hover:bg-chipmunk-light text-white rounded-xl transition flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 shadow-md flex-shrink-0">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ ПРОФИЛЯ -->
+    <div id="settings-modal" class="hidden absolute inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-panel w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transform transition-transform">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Настройки</h2>
+                <button onclick="closeSettings()" class="w-8 h-8 rounded-full input-bg flex items-center justify-center hover:text-red-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Выбор аватарки -->
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase mb-3">Ваш аватар</label>
+                    <div class="flex justify-between" id="avatar-picker">
+                        <button onclick="setAvatar('🐿️')" class="w-12 h-12 text-2xl rounded-xl input-bg hover:bg-chipmunk transition border-2 border-transparent">🐿️</button>
+                        <button onclick="setAvatar('🦊')" class="w-12 h-12 text-2xl rounded-xl input-bg hover:bg-chipmunk transition border-2 border-transparent">🦊</button>
+                        <button onclick="setAvatar('🐼')" class="w-12 h-12 text-2xl rounded-xl input-bg hover:bg-chipmunk transition border-2 border-transparent">🐼</button>
+                        <button onclick="setAvatar('😎')" class="w-12 h-12 text-2xl rounded-xl input-bg hover:bg-chipmunk transition border-2 border-transparent">😎</button>
+                        <button onclick="setAvatar('👻')" class="w-12 h-12 text-2xl rounded-xl input-bg hover:bg-chipmunk transition border-2 border-transparent">👻</button>
+                    </div>
+                </div>
+
+                <!-- Выбор темы -->
+                <div>
+                    <label class="block text-xs font-semibold text-muted uppercase mb-3">Оформление</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setTheme('theme-light')" class="py-2 bg-gray-100 text-gray-800 rounded-lg text-sm border border-gray-300 font-medium">Светлая</button>
+                        <button onclick="setTheme('theme-dark')" class="py-2 bg-gray-800 text-gray-200 rounded-lg text-sm border border-gray-700 font-medium">Темная</button>
+                        <button onclick="setTheme('theme-chipmunk')" class="py-2 bg-stone-900 text-orange-500 rounded-lg text-sm border border-orange-900 font-medium">Бурундук</button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-600/30">
+                    <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-bold py-3 rounded-xl transition flex justify-center items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Выйти из аккаунта
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- ПАНЕЛЬ ЗВОНКА (Поверх всего) -->
+    <div id="video-overlay" class="hidden absolute inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 pointer-events-none flex items-center justify-center sm:justify-end bg-black/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none">
+        <div class="pointer-events-auto bg-stone-900 border border-stone-700 p-3 rounded-3xl shadow-2xl flex flex-col w-full max-w-sm sm:w-72 transition-all relative text-white" id="call-container">
+            
+            <div class="absolute top-4 left-4 z-40">
+                <span id="call-type-badge" class="bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-md">Звонок</span>
+            </div>
+
+            <!-- Область Собеседника -->
+            <div class="relative w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden mb-3 flex items-center justify-center">
+                <!-- Заглушка аудио -->
+                <div id="audio-only-remote" class="hidden flex-col items-center justify-center w-full h-full bg-stone-800 absolute inset-0 z-10">
+                    <div id="call-remote-avatar" class="w-24 h-24 bg-stone-700 rounded-full flex items-center justify-center text-5xl shadow-lg relative z-10 animate-pulse">👤</div>
+                </div>
+                <!-- Видео -->
+                <video id="remote-video" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+                <!-- Лоадер -->
+                <div id="remote-video-loader" class="absolute inset-0 flex flex-col justify-center items-center bg-stone-900/90 z-20">
+                    <i class="fas fa-spinner fa-spin text-3xl text-chipmunk mb-3"></i>
+                    <span class="text-xs text-stone-300">Соединение P2P...</span>
+                </div>
+            </div>
+
+            <!-- Моя камера -->
+            <div id="local-video-wrapper" class="relative w-full h-24 bg-black rounded-xl overflow-hidden mb-3">
+                <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+            </div>
+
+            <!-- Кнопки звонка -->
+            <div class="flex space-x-2">
+                <button onclick="toggleMic()" id="btn-mic" class="flex-1 bg-stone-700 p-3 rounded-xl text-white hover:bg-stone-600 transition"><i class="fas fa-microphone"></i></button>
+                <button onclick="toggleVideo()" id="btn-video" class="flex-1 bg-stone-700 p-3 rounded-xl text-white hover:bg-stone-600 transition"><i class="fas fa-video"></i></button>
+                <button onclick="endCall()" class="flex-2 bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-xl font-bold transition w-full"><i class="fas fa-phone-slash"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: Входящий звонок -->
+    <div id="incoming-call-modal" class="hidden absolute inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+        <div class="bg-stone-800 border border-stone-600 rounded-3xl p-6 sm:p-8 w-full max-w-sm text-center shadow-2xl animate-bounce">
+            <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl relative">
+                <div class="absolute inset-0 bg-green-500/30 rounded-full animate-ping"></div>
+                <div id="incoming-call-icon" class="bg-green-500 w-full h-full rounded-full flex items-center justify-center relative z-10 text-white">
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+            </div>
+            <h2 id="incoming-call-title" class="text-xl font-bold text-white mb-1">Входящий звонок!</h2>
+            <p id="incoming-caller-name" class="text-stone-300 text-sm mb-6">Неизвестный контакт</p>
+            <div class="flex space-x-4">
+                <button onclick="answerCall()" class="flex-1 bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl transition shadow-lg text-lg"><i class="fas fa-phone"></i></button>
+                <button onclick="rejectCall()" class="flex-1 bg-red-500 hover:bg-red-400 text-white font-bold py-4 rounded-2xl transition shadow-lg text-lg"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЛОГИКА JS -->
     <script>
-        let peer = null;
-        let localStream = null;
-        let currentCall = null;
-        let incomingCallRef = null;
+        // --- БАЗА ДАННЫХ (Local Storage) ---
+        let userProfile = JSON.parse(localStorage.getItem('chipmunk_user')) || null;
+        
+        // --- СОСТОЯНИЕ P2P ---
+        let peer = null;            
+        let dataConnection = null;  
+        let mediaConnection = null; 
+        let localStream = null;     
+        let incomingCallRef = null; 
+        let reconnectTimeout = null;
+        
         let micEnabled = true;
         let videoEnabled = true;
+        let currentCallType = null; 
+        let currentChatFriend = null;
 
-        const screens = {
-            lobby: document.getElementById('lobby-screen'),
-            call: document.getElementById('call-screen'),
-            error: document.getElementById('error-screen')
+        const ui = {
+            auth: document.getElementById('screen-auth'),
+            app: document.getElementById('screen-app'),
+            viewContacts: document.getElementById('view-contacts'),
+            viewChat: document.getElementById('view-chat'),
+            settings: document.getElementById('settings-modal'),
+            videoOverlay: document.getElementById('video-overlay'),
+            incomingModal: document.getElementById('incoming-call-modal'),
+            status: document.getElementById('connection-status'),
+            myIdInput: document.getElementById('my-id'),
+            chatInput: document.getElementById('chat-input') // ИСПРАВЛЕНИЕ: Добавлен chatInput в объект ui
         };
 
-        function showScreen(screenName) {
-            screens.lobby.classList.add('hidden');
-            screens.call.classList.add('hidden');
-            screens.error.classList.add('hidden');
-            screens[screenName].classList.remove('hidden');
-        }
-
-        function showToast(msg) {
+        // --- УТИЛИТЫ ---
+        function showToast(msg, type = 'info') {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = msg;
-            toast.classList.remove('opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 3000);
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
         }
 
-        async function initApp() {
-            // 1. СНАЧАЛА подключаемся к серверу для генерации ID (не ждем камеру)
-            try {
-                peer = new Peer({
-                    debug: 2,
-                    config: {'iceServers': [
+        function setStatus(text, colorClass = 'text-stone-400', isPulse = false) {
+            const dot = isPulse ? `<span class="w-2 h-2 rounded-full bg-${colorClass.split('-')[1]}-500 mr-1 animate-pulse flex-shrink-0"></span>` : `<span class="w-2 h-2 rounded-full bg-${colorClass.split('-')[1]}-500 mr-1 flex-shrink-0"></span>`;
+            ui.status.innerHTML = `${dot} <span class="${colorClass} truncate">${text}</span>`;
+        }
+
+        // --- АВТОРИЗАЦИЯ И ПРОФИЛЬ ---
+        function checkAuth() {
+            if (userProfile && userProfile.username) {
+                ui.auth.classList.add('hidden');
+                ui.app.classList.remove('hidden');
+                applyProfile();
+                initPeer(); // Запускаем сеть только после входа
+                renderFriendsList();
+            } else {
+                ui.auth.classList.remove('hidden');
+                ui.app.classList.add('hidden');
+            }
+        }
+
+        function loginUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value.trim();
+            if (!username) return;
+
+            userProfile = {
+                username: username,
+                avatar: '🐿️',
+                theme: 'theme-chipmunk',
+                friends: [] // Формат: { id: '...', name: '...' }
+            };
+            saveProfile();
+            checkAuth();
+            showToast(`Добро пожаловать, ${username}!`);
+        }
+
+        function logout() {
+            if (peer) peer.destroy();
+            localStorage.removeItem('chipmunk_user');
+            userProfile = null;
+            closeSettings();
+            checkAuth();
+        }
+
+        function saveProfile() {
+            localStorage.setItem('chipmunk_user', JSON.stringify(userProfile));
+        }
+
+        function applyProfile() {
+            document.body.className = `${userProfile.theme} font-sans h-[100dvh] flex flex-col overflow-hidden transition-colors duration-300`;
+            document.getElementById('my-name-display').innerText = userProfile.username;
+            document.getElementById('my-avatar-display').innerText = userProfile.avatar;
+            
+            // Выделяем аватар в настройках
+            document.querySelectorAll('#avatar-picker button').forEach(btn => {
+                if(btn.innerText === userProfile.avatar) btn.classList.add('border-chipmunk');
+                else btn.classList.remove('border-chipmunk');
+            });
+        }
+
+        // --- НАСТРОЙКИ ---
+        function openSettings() { ui.settings.classList.remove('hidden'); }
+        function closeSettings() { ui.settings.classList.add('hidden'); }
+        
+        function setAvatar(emoji) {
+            userProfile.avatar = emoji;
+            saveProfile();
+            applyProfile();
+        }
+
+        function setTheme(theme) {
+            userProfile.theme = theme;
+            saveProfile();
+            applyProfile();
+        }
+
+        // --- ЛОГИКА ДРУЗЕЙ ---
+        function addFriend() {
+            const name = document.getElementById('new-friend-name').value.trim();
+            const id = document.getElementById('new-friend-id').value.trim();
+            
+            if (!name || !id) return showToast('Заполните оба поля', 'error');
+            if (id === ui.myIdInput.value) return showToast('Вы не можете добавить себя', 'error');
+            
+            // Проверка на дубликат
+            if (userProfile.friends.find(f => f.id === id)) return showToast('Друг с таким ID уже есть', 'error');
+
+            userProfile.friends.push({ id, name, avatar: '👤' });
+            saveProfile();
+            renderFriendsList();
+            
+            document.getElementById('new-friend-name').value = '';
+            document.getElementById('new-friend-id').value = '';
+            showToast('Контакт сохранен!');
+        }
+
+        function renderFriendsList() {
+            const list = document.getElementById('friends-list');
+            list.innerHTML = '';
+            
+            if (userProfile.friends.length === 0) {
+                list.innerHTML = '<p class="text-xs text-muted text-center py-4">Список контактов пуст. Добавьте друга по его длинному ID.</p>';
+                return;
+            }
+
+            userProfile.friends.forEach(f => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full input-bg hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl p-3 flex items-center justify-between transition group shadow-sm';
+                btn.onclick = () => openChatWith(f);
+                btn.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-stone-300 dark:bg-stone-600 flex items-center justify-center mr-3 text-lg">${f.avatar}</div>
+                        <div class="text-left">
+                            <div class="font-bold text-sm">${f.name}</div>
+                            <div class="text-[10px] text-muted truncate w-32 sm:w-48">${f.id}</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-comment text-chipmunk opacity-50 group-hover:opacity-100 transition"></i>
+                `;
+                list.appendChild(btn);
+            });
+        }
+
+        function getFriendNameById(id) {
+            const friend = userProfile.friends.find(f => f.id === id);
+            return friend ? friend.name : 'Неизвестный контакт';
+        }
+
+        // --- НАСТРОЙКА СЕТИ (PEERJS) - Возврат к стабильным длинным ID ---
+        function initPeer() {
+            // Разрешаем PeerJS самому сгенерировать длинный надежный ID
+            peer = new Peer({
+                debug: 2,
+                pingInterval: 10000,
+                config: {
+                    // Мощный список серверов для плохого интернета
+                    iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]}
-                });
-
-                peer.on('open', (id) => {
-                    document.getElementById('my-id').value = id;
-                    document.getElementById('status-text').innerText = "✅ Подключено! Отправьте ID другу.";
-                    document.getElementById('status-text').className = "text-xs mt-2 text-green-500";
-                });
-
-                peer.on('call', (call) => {
-                    incomingCallRef = call;
-                    document.getElementById('incoming-modal').classList.remove('hidden');
-                });
-
-                peer.on('error', (err) => {
-                    console.error("Ошибка PeerJS:", err);
-                    document.getElementById('status-text').innerText = "Ошибка сети. Обновите страницу.";
-                    document.getElementById('status-text').className = "text-xs mt-2 text-red-500";
-                    if(err.type !== 'peer-unavailable') {
-                        showToast("Произошла ошибка соединения");
-                    }
-                    resetUI();
-                });
-
-                // Таймер, если генерация зависла из-за блокировок сети
-                setTimeout(() => {
-                    if(document.getElementById('my-id').value === 'Генерация...') {
-                        document.getElementById('status-text').innerText = "⚠️ Сеть друга блокирует подключение. Пусть отключит VPN!";
-                        document.getElementById('status-text').className = "text-xs mt-2 text-yellow-500";
-                    }
-                }, 8000);
-            } catch (err) {
-                console.error("Peer init error", err);
-            }
-
-            // 2. ПАРАЛЛЕЛЬНО запрашиваем камеру и микрофон
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('local-video-lobby').srcObject = localStream;
-                document.getElementById('local-video-call').srcObject = localStream;
-                document.getElementById('cam-loading').style.display = 'none';
-            } catch (err) {
-                console.error(err);
-                showScreen('error');
-                document.getElementById('error-msg').innerText = "Браузер заблокировал доступ к камере или микрофону. Разрешите доступ (значок замка в адресной строке) и обновите страницу.";
-            }
-        }
-
-        function copyId() {
-            const id = document.getElementById('my-id').value;
-            if(id === 'Генерация...') return;
-            navigator.clipboard.writeText(id).then(() => {
-                showToast('Ваш ID скопирован!');
-            }).catch(() => {
-                const input = document.getElementById('my-id');
-                input.select();
-                document.execCommand('copy');
-                showToast('Ваш ID скопирован!');
-            });
-        }
-
-        function setupCallEvents(call) {
-            currentCall = call;
-            
-            call.on('stream', (remoteStream) => {
-                document.getElementById('remote-video').srcObject = remoteStream;
-                showScreen('call'); 
-            });
-
-            call.on('close', () => endCall());
-            call.on('error', () => {
-                showToast('Соединение разорвано');
-                endCall();
-            });
-        }
-
-        function makeCall() {
-            const remoteId = document.getElementById('remote-id').value.trim();
-            const myId = document.getElementById('my-id').value;
-            
-            if (!remoteId) {
-                showToast('Сначала вставьте ID друга!');
-                return;
-            }
-            if (remoteId === myId) {
-                showToast('Вы ввели свой собственный ID!');
-                return;
-            }
-
-            const btn = document.getElementById('call-btn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Соединение...';
-            btn.disabled = true;
-
-            const call = peer.call(remoteId, localStream);
-            setupCallEvents(call);
-            
-            // Сброс кнопки если друг не ответил
-            setTimeout(() => {
-                if(screens.call.classList.contains('hidden')) {
-                    resetUI();
-                    showToast('Друг не ответил или ID неверный');
+                        { urls: 'stun:stun.cloudflare.com:3478' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
                 }
-            }, 15000);
+            });
+
+            peer.on('open', (id) => {
+                ui.myIdInput.value = id;
+                setStatus('В сети', 'text-green-500', true);
+            });
+
+            peer.on('disconnected', () => {
+                setStatus('Потеря сети...', 'text-yellow-500', true);
+                if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000);
+            });
+
+            peer.on('connection', (conn) => {
+                if (dataConnection) { conn.close(); return; }
+                setupChatConnection(conn, false);
+            });
+
+            peer.on('call', (call) => {
+                incomingCallRef = call;
+                currentCallType = call.metadata?.type || 'video';
+                const callerName = getFriendNameById(call.peer);
+                
+                document.getElementById('incoming-caller-name').innerText = callerName;
+                document.getElementById('incoming-call-title').innerText = currentCallType === 'audio' ? 'Аудиозвонок!' : 'Видеозвонок!';
+                
+                ui.incomingModal.classList.remove('hidden');
+            });
+
+            peer.on('error', (err) => {
+                console.error("PeerJS Ошибка:", err);
+                if (err.type === 'peer-unavailable') {
+                    showToast('Собеседник не в сети', 'error');
+                } else if (err.type === 'network' || err.type === 'disconnected') {
+                    setStatus('Сбой сети...', 'text-red-400');
+                    setTimeout(() => { if (!peer.destroyed) peer.reconnect(); }, 3000);
+                }
+            });
         }
 
-        function answerCall() {
-            document.getElementById('incoming-modal').classList.add('hidden');
-            if (incomingCallRef && localStream) {
+        // --- ЛОГИКА ЧАТА ---
+        function openChatWith(friend) {
+            currentChatFriend = friend;
+            document.getElementById('chat-header-name').innerText = friend.name;
+            document.getElementById('chat-header-avatar').innerText = friend.avatar;
+            document.getElementById('chat-history').innerHTML = '<div class="flex justify-center my-2"><span class="bg-panel text-muted text-[10px] px-3 py-1 rounded-full border shadow-sm text-center">P2P шифрование активно 🔒</span></div>';
+            
+            ui.viewContacts.classList.add('hidden');
+            ui.viewChat.classList.remove('hidden');
+
+            setStatus(`Подключение к ${friend.name}...`, 'text-yellow-500');
+
+            // Подключаемся
+            const conn = peer.connect(friend.id, {
+                metadata: { senderName: userProfile.username }
+            });
+            
+            conn.on('open', () => setupChatConnection(conn, true));
+            conn.on('error', () => {
+                showToast('Ошибка подключения', 'error');
+                setStatus('В сети', 'text-green-500', true);
+            });
+        }
+
+        function setupChatConnection(conn, isInitiator) {
+            dataConnection = conn;
+            
+            // Если нам пишут первыми, а мы были в контактах, переключаем UI
+            if (!isInitiator) {
+                const friendName = conn.metadata?.senderName || getFriendNameById(conn.peer);
+                document.getElementById('chat-header-name').innerText = friendName;
+                ui.viewContacts.classList.add('hidden');
+                ui.viewChat.classList.remove('hidden');
+            }
+
+            dataConnection.on('data', (data) => renderMessage(data.text, 'them'));
+            dataConnection.on('close', () => {
+                showToast('Собеседник отключился', 'error');
+                closeChat();
+            });
+
+            setStatus('Чат защищен', 'text-chipmunk-light');
+        }
+
+        function closeChat() {
+            if (dataConnection) dataConnection.close();
+            if (mediaConnection) endCallLocally();
+            dataConnection = null;
+            currentChatFriend = null;
+            
+            ui.viewChat.classList.add('hidden');
+            ui.viewContacts.classList.remove('hidden');
+            setStatus('В сети', 'text-green-500', true);
+        }
+
+        function sendMessage(e) {
+            e.preventDefault();
+            if (!dataConnection) {
+                showToast('Ожидание подключения собеседника...', 'error');
+                return;
+            }
+            const text = ui.chatInput.value.trim();
+            if (!text) return;
+
+            dataConnection.send({ type: 'text', text: text });
+            renderMessage(text, 'me');
+            ui.chatInput.value = '';
+            ui.chatInput.style.height = 'auto';
+        }
+
+        function renderMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            const isMe = sender === 'me';
+            msgDiv.className = `flex w-full mb-2 ${isMe ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            // Применяем цвета в зависимости от отправителя и темы
+            bubble.className = `max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow-sm break-words ${
+                isMe 
+                ? 'bg-chipmunk text-white rounded-tr-sm' 
+                : 'input-bg border rounded-tl-sm'
+            }`;
+            bubble.textContent = text; 
+            
+            const timeSpan = document.createElement('div');
+            timeSpan.className = `text-[9px] mt-1 opacity-70 ${isMe ? 'text-right' : 'text-left'}`;
+            const d = new Date();
+            timeSpan.innerText = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+            
+            bubble.appendChild(timeSpan);
+            msgDiv.appendChild(bubble);
+            const history = document.getElementById('chat-history');
+            history.appendChild(msgDiv);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        // --- ЛОГИКА ЗВОНКОВ (ОПТИМИЗАЦИЯ ДЛЯ СЛАБОЙ СЕТИ) ---
+        async function getMediaAccess(type) {
+            try {
+                if (localStream) localStream.getTracks().forEach(t => t.stop());
+                
+                // ОПТИМИЗАЦИЯ: Запрашиваем низкое разрешение видео для слабого мобильного интернета
+                const constraints = {
+                    audio: true,
+                    video: type === 'video' ? { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24 } } : false
+                };
+
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                document.getElementById('local-video').srcObject = localStream;
+                micEnabled = true; videoEnabled = type === 'video';
+                updateMediaButtons();
+                return true;
+            } catch (err) {
+                showToast('Доступ к камере/микрофону запрещен!', 'error');
+                return false;
+            }
+        }
+
+        function setCallUI(type) {
+            const isAudio = type === 'audio';
+            document.getElementById('call-type-badge').innerText = isAudio ? 'Аудиозвонок' : 'Видеозвонок';
+            document.getElementById('audio-only-remote').classList.toggle('hidden', !isAudio);
+            
+            const vidEl = document.getElementById('remote-video');
+            if (!isAudio) vidEl.classList.remove('hidden'); else vidEl.classList.add('hidden');
+            
+            document.getElementById('local-video-wrapper').classList.toggle('hidden', isAudio);
+            document.getElementById('btn-video').classList.toggle('hidden', isAudio);
+            
+            ui.videoOverlay.classList.remove('hidden');
+            document.getElementById('remote-video-loader').classList.remove('hidden');
+        }
+
+        async function startCall(type) {
+            if (!dataConnection) return showToast('Сначала дождитесь подключения чата', 'error');
+            const targetId = dataConnection.peer; 
+            currentCallType = type;
+
+            const hasMedia = await getMediaAccess(type);
+            if (!hasMedia) return;
+
+            setCallUI(type);
+            const call = peer.call(targetId, localStream, { metadata: { type: type } });
+            setupMediaConnection(call);
+        }
+
+        async function answerCall() {
+            ui.incomingModal.classList.add('hidden');
+            const hasMedia = await getMediaAccess(currentCallType);
+            if (!hasMedia) { if (incomingCallRef) incomingCallRef.close(); return; }
+
+            if (incomingCallRef) {
+                setCallUI(currentCallType);
                 incomingCallRef.answer(localStream);
-                setupCallEvents(incomingCallRef);
+                setupMediaConnection(incomingCallRef);
                 incomingCallRef = null;
             }
         }
 
         function rejectCall() {
-            document.getElementById('incoming-modal').classList.add('hidden');
-            if (incomingCallRef) {
-                incomingCallRef.close();
-                incomingCallRef = null;
-            }
+            ui.incomingModal.classList.add('hidden');
+            if (incomingCallRef) { incomingCallRef.close(); incomingCallRef = null; }
+        }
+
+        function setupMediaConnection(call) {
+            mediaConnection = call;
+            call.on('stream', (remoteStream) => {
+                const videoEl = document.getElementById('remote-video');
+                if (videoEl.srcObject !== remoteStream) {
+                    videoEl.srcObject = remoteStream;
+                    videoEl.onloadedmetadata = () => {
+                        videoEl.play().catch(e => console.log(e));
+                        document.getElementById('remote-video-loader').classList.add('hidden');
+                    };
+                }
+            });
+            call.on('close', endCallLocally);
+            call.on('error', () => { showToast('Ошибка связи', 'error'); endCallLocally(); });
         }
 
         function endCall() {
-            if (currentCall) {
-                currentCall.close();
-                currentCall = null;
-            }
-            document.getElementById('remote-video').srcObject = null;
-            resetUI();
+            if (mediaConnection) mediaConnection.close();
+            endCallLocally();
         }
 
-        function resetUI() {
-            showScreen('lobby');
-            const btn = document.getElementById('call-btn');
-            btn.innerHTML = '<i class="fas fa-phone mr-2"></i> Позвонить';
-            btn.disabled = false;
-            document.getElementById('incoming-modal').classList.add('hidden');
+        function endCallLocally() {
+            mediaConnection = null;
+            document.getElementById('remote-video').srcObject = null;
+            ui.videoOverlay.classList.add('hidden');
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+                document.getElementById('local-video').srcObject = null;
+            }
+            currentCallType = null;
+        }
+
+        function updateMediaButtons() {
+            const btnMic = document.getElementById('btn-mic');
+            btnMic.className = `flex-1 p-3 rounded-xl transition ${micEnabled ? 'bg-stone-700 hover:bg-stone-600 text-white' : 'bg-red-500 hover:bg-red-600 text-white'}`;
+            btnMic.innerHTML = `<i class="fas ${micEnabled ? 'fa-microphone' : 'fa-microphone-slash'}"></i>`;
+
+            const btnVideo = document.getElementById('btn-video');
+            btnVideo.className = `flex-1 p-3 rounded-xl transition ${videoEnabled ? 'bg-stone-700 hover:bg-stone-600 text-white' : 'bg-red-500 hover:bg-red-600 text-white'}`;
+            btnVideo.innerHTML = `<i class="fas ${videoEnabled ? 'fa-video' : 'fa-video-slash'}"></i>`;
         }
 
         function toggleMic() {
+            if(!localStream) return;
             micEnabled = !micEnabled;
             localStream.getAudioTracks().forEach(track => track.enabled = micEnabled);
-            const btn = document.getElementById('btn-mic');
-            btn.className = `w-14 h-14 rounded-full text-white transition flex items-center justify-center ${micEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}`;
-            btn.innerHTML = `<i class="fas ${micEnabled ? 'fa-microphone' : 'fa-microphone-slash'} text-xl"></i>`;
+            updateMediaButtons();
         }
 
         function toggleVideo() {
+            if(!localStream || currentCallType === 'audio') return;
             videoEnabled = !videoEnabled;
             localStream.getVideoTracks().forEach(track => track.enabled = videoEnabled);
-            const btn = document.getElementById('btn-video');
-            btn.className = `w-14 h-14 rounded-full text-white transition flex items-center justify-center ${videoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'}`;
-            btn.innerHTML = `<i class="fas ${videoEnabled ? 'fa-video' : 'fa-video-slash'} text-xl"></i>`;
+            updateMediaButtons();
         }
 
-        window.onload = initApp;
+        function copyId() {
+            const id = ui.myIdInput.value;
+            if(id === 'Генерация...') return;
+            navigator.clipboard.writeText(id).then(() => showToast('ID скопирован!')).catch(() => {
+                ui.myIdInput.select(); document.execCommand('copy'); showToast('ID скопирован!');
+            });
+        }
+
+        // Авто-расширение поля ввода
+        ui.chatInput.addEventListener('input', function() {
+            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
+        });
+        ui.chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); }
+        });
+
+        // Запуск
+        window.onload = checkAuth;
+
     </script>
 </body>
 </html>
