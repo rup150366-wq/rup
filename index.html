@@ -38,7 +38,7 @@
         }
         @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
 
-        /* Плавающие неоновые сферы (работают везде, не вызывают черный экран) */
+        /* Плавающие неоновые сферы */
         .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: floatOrb 10s infinite alternate ease-in-out; }
         .orb-1 { width: 300px; height: 300px; background: #ff00aa; top: -50px; left: -50px; animation-delay: 0s; }
         .orb-2 { width: 400px; height: 400px; background: #00f3ff; bottom: -100px; right: -100px; animation-delay: -3s; }
@@ -46,7 +46,7 @@
         
         @keyframes floatOrb { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
 
-        /* --- GLASSMORPHISM (МАТОВоЕ СТЕКЛО) --- */
+        /* --- GLASSMORPHISM --- */
         .glass-panel { 
             background: rgba(15, 15, 20, 0.4); 
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -60,7 +60,6 @@
         }
         .glass-input:focus { border-color: #ff5500; box-shadow: 0 0 15px rgba(255, 85, 0, 0.4); background: rgba(0, 0, 0, 0.6); outline: none; }
 
-        /* --- КРАСИВЫЕ ПУЗЫРИ ЧАТА --- */
         .msg-me { background: linear-gradient(135deg, #ff512f, #dd2476); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(221, 36, 118, 0.3); }
         .msg-them { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); color: white; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
 
@@ -80,11 +79,12 @@
 </head>
 <body class="h-[100dvh] flex flex-col">
 
-    <!-- ЖИВОЙ ФОН (БЕЗ JS, РАБОТАЕТ ИДЕАЛЬНО) -->
+    <!-- ЖИВОЙ ФОН И АНИМАЦИЯ CANVAS -->
     <div class="animated-bg"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
+    <canvas id="epic-battle-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.9; pointer-events: none;"></canvas>
 
     <!-- УВЕДОМЛЕНИЯ -->
     <div id="toast" class="ui-layer fixed top-6 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-white/20 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center font-bold">
@@ -120,7 +120,6 @@
     <!-- ГЛАВНЫЙ ИНТЕРФЕЙС -->
     <div id="screen-app" class="ui-layer hidden flex-1 flex flex-col h-full bg-transparent">
         
-        <!-- ШАПКА -->
         <header class="glass-panel p-3 sm:p-4 flex justify-between items-center z-20 flex-shrink-0 rounded-b-3xl mx-2 mt-2">
             <div class="flex items-center space-x-4">
                 <div class="relative cursor-pointer hover:scale-105 transition transform" onclick="openSettings()">
@@ -130,7 +129,7 @@
                 <div class="overflow-hidden">
                     <h1 id="my-name-display" class="text-xl font-black text-white truncate tracking-wide">Имя</h1>
                     <p id="connection-status" class="text-xs text-neon-cyan flex items-center font-bold tracking-widest uppercase mt-1">
-                        <span class="w-2 h-2 rounded-full bg-neon-cyan mr-2 animate-pulse shadow-[0_0_8px_#00f3ff]"></span> Online
+                        <span class="w-2 h-2 rounded-full bg-neon-cyan mr-2 animate-pulse shadow-[0_0_8px_#00f3ff]"></span> Ожидание...
                     </p>
                 </div>
             </div>
@@ -139,20 +138,16 @@
 
         <main class="flex-1 relative flex overflow-hidden p-2">
             
-            <!-- КОНТАКТЫ И ID -->
             <div id="view-contacts" class="absolute inset-0 flex flex-col p-2 overflow-y-auto w-full max-w-md mx-auto animate-pop z-10">
-                
-                <!-- Мой ID -->
                 <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-neon-purple rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
                     <h2 class="text-xs font-black mb-3 text-stone-400 uppercase tracking-widest"><i class="fas fa-fingerprint mr-2 text-neon-cyan"></i>Твой цифровой ID</h2>
                     <div class="flex items-center space-x-3 relative z-10">
-                        <input type="text" id="my-id" readonly value="Подключение..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider">
+                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider">
                         <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white p-4 rounded-2xl active:scale-90 transition text-xl backdrop-blur-md"><i class="fas fa-clone"></i></button>
                     </div>
                 </div>
 
-                <!-- Добавить -->
                 <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
                     <div class="absolute top-0 left-0 w-32 h-32 bg-orange-500 rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
                     <h2 class="text-xs font-black mb-4 text-stone-400 uppercase tracking-widest"><i class="fas fa-radar mr-2 text-orange-500"></i>Радар (Поиск)</h2>
@@ -164,17 +159,13 @@
                     </div>
                 </div>
 
-                <!-- Список -->
                 <div class="flex-1 glass-panel rounded-3xl p-6 overflow-y-auto">
                     <h2 class="text-xs font-black mb-4 text-stone-400 uppercase tracking-widest"><i class="fas fa-users mr-2 text-pink-500"></i>Связи</h2>
                     <div id="friends-list" class="space-y-3"></div>
                 </div>
             </div>
 
-            <!-- ОКНО ЧАТА -->
             <div id="view-chat" class="hidden absolute inset-0 flex flex-col z-20 w-full animate-pop px-2 pb-2">
-                
-                <!-- Шапка чата -->
                 <div class="glass-panel rounded-t-[2rem] p-3 sm:p-4 flex justify-between items-center shadow-2xl z-30 mb-2 mt-2">
                     <div class="flex items-center">
                         <button onclick="closeChat()" class="mr-4 w-12 h-12 rounded-full glass-input flex items-center justify-center active:scale-90 text-xl hover:bg-white/10 transition"><i class="fas fa-chevron-left"></i></button>
@@ -187,24 +178,19 @@
                     </div>
                 </div>
 
-                <!-- История -->
                 <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 z-10 glass-panel rounded-[2rem] mb-2 flex flex-col">
                     <div class="flex flex-col items-center justify-center my-4">
                         <span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,243,255,0.2)]">P2P Канал Защищен 🔒</span>
                     </div>
-                    <!-- Сообщения будут падать сюда -->
                 </div>
 
-                <!-- Ввод -->
                 <div class="glass-panel rounded-b-[2rem] p-3 sm:p-4 flex-shrink-0 z-30">
                     <form onsubmit="sendMessage(event)" class="flex items-end space-x-3 max-w-4xl mx-auto">
                         <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input hover:bg-white/20 text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl" title="Прикрепить">
                             <i class="fas fa-plus"></i>
                         </button>
                         <input type="file" id="file-input" class="hidden" onchange="sendFile(event)">
-
                         <textarea id="chat-input" rows="1" placeholder="Написать..." class="flex-1 glass-input rounded-[1.2rem] px-5 py-4 text-base outline-none resize-none max-h-32 min-h-[56px] font-medium"></textarea>
-                        
                         <button type="submit" class="bg-gradient-to-tr from-neon-cyan to-blue-600 text-white rounded-[1.2rem] flex items-center justify-center w-14 h-14 shadow-[0_0_15px_rgba(0,243,255,0.4)] flex-shrink-0 active:scale-90 text-xl transition hover:scale-105"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
@@ -312,21 +298,94 @@
     <!-- ЛОГИКА -->
     <script>
         // ==========================================
-        // ЛОГИКА МЕССЕНДЖЕРА (СТАБИЛЬНАЯ P2P)
+        // 1. АНИМАЦИЯ CANVAS (БРОНЕБОЙНАЯ)
         // ==========================================
-        let userProfile = JSON.parse(localStorage.getItem('chipmunk_neon_user')) || null;
-        let chatHistories = JSON.parse(localStorage.getItem('chipmunk_neon_histories')) || {}; 
+        function initEpicBattle() {
+            const canvas = document.getElementById('epic-battle-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w, h, particles = [], blocks = [], frameCount = 0;
+            let lastTime = 0; const FPS = 60; const frameInterval = 1000 / FPS;
+
+            function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize); resize();
+
+            function animate(currentTime) {
+                requestAnimationFrame(animate);
+                if (!lastTime) lastTime = currentTime;
+                const deltaTime = currentTime - lastTime;
+                if (deltaTime < frameInterval) return;
+                lastTime = currentTime - (deltaTime % frameInterval);
+
+                ctx.clearRect(0, 0, w, h);
+                frameCount++;
+
+                let heroX = w * 0.8; let heroY = h * 0.5 + Math.sin(frameCount * 0.05) * 10;
+                ctx.font = '90px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('🐿️', heroX, heroY);
+
+                if (frameCount % 60 === 0) blocks.push({ x: -100, y: heroY + (Math.random()*120 - 60), speed: 5 + Math.random()*3, size: 50, destroyed: false });
+                let isHitting = blocks.some(b => !b.destroyed && b.x > heroX - 140 && b.x < heroX);
+                let swordSwing = isHitting ? Math.sin(frameCount * 0.8) * 2.5 : 0;
+
+                for (let i = blocks.length - 1; i >= 0; i--) {
+                    let b = blocks[i]; b.x += b.speed;
+                    if (!b.destroyed && b.x > heroX - 110 && b.x < heroX) {
+                        b.destroyed = true;
+                        for(let j=0; j<25; j++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, life: 1 });
+                    }
+                    if (!b.destroyed) {
+                        ctx.fillStyle = '#dc2626'; ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
+                        ctx.fillStyle = 'white'; ctx.font = 'bold 16px Arial'; ctx.fillText('РКН', b.x, b.y);
+                    } else { blocks.splice(i, 1); }
+                }
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.04;
+                    if (p.life > 0) { ctx.fillStyle = `rgba(0, 255, 255, ${p.life})`; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); } 
+                    else { particles.splice(i, 1); }
+                }
+
+                ctx.save(); ctx.translate(heroX - 40, heroY + 10); ctx.rotate(-Math.PI/4 + swordSwing);
+                ctx.fillStyle = '#0ff'; ctx.shadowBlur = 20; ctx.shadowColor = '#0ff'; ctx.fillRect(-5, -100, 10, 100);
+                ctx.fillStyle = '#555'; ctx.shadowBlur = 0; ctx.fillRect(-7, 0, 14, 20); ctx.restore();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Запуск анимации мгновенно, без ожидания полной прогрузки
+        try { initEpicBattle(); } catch(e) { console.warn("Canvas animation bypassed"); }
+
+
+        // ==========================================
+        // 2. БЕЗОПАСНАЯ ЛОГИКА (ОБХОД БЛОКИРОВОК)
+        // ==========================================
+        let userProfile = null;
+        let chatHistories = {}; 
+        
+        // Безопасное чтение памяти (защита от сбоя в WebView)
+        function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+        function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) { console.warn('Browser restricts saving data.'); } }
+
+        try {
+            const savedUser = safeGetItem('chipmunk_neon_user');
+            if (savedUser) userProfile = JSON.parse(savedUser);
+            const savedHist = safeGetItem('chipmunk_neon_histories');
+            if (savedHist) chatHistories = JSON.parse(savedHist);
+        } catch(e) {
+            console.warn("Storage read failed");
+        }
+
         let peer = null, dataConnection = null, mediaConnection = null, localStream = null;
         let incomingCallRef = null, currentCallType = null, currentChatFriendId = null, currentProfileId = null;
         let micEnabled = true, videoEnabled = true;
-
         const ringtoneAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3');
         ringtoneAudio.loop = true;
 
         const ui = {
             auth: document.getElementById('screen-auth'), app: document.getElementById('screen-app'),
             viewContacts: document.getElementById('view-contacts'), viewChat: document.getElementById('view-chat'),
-            status: document.getElementById('connection-status')
+            status: document.getElementById('connection-status'), chatInput: document.getElementById('chat-input')
         };
 
         function showToast(msg, type='info') {
@@ -336,12 +395,12 @@
             else { t.style.background = 'rgba(255, 255, 255, 0.1)'; document.getElementById('toast-icon').className = 'fas fa-bell mr-3 text-neon-cyan'; }
             setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
         }
+        
         function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-2 shadow-[0_0_8px_${c==='text-neon-cyan'?'#00f3ff':'#ff0000'}]"></span> ${t}`; }
-        function requestNotificationPermission() { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); }
         function playMessageSound() { try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){} }
         
         function checkAuth() {
-            if (userProfile && userProfile.username) { ui.auth.classList.add('hidden'); ui.app.classList.remove('hidden'); applyProfile(); initPeer(); renderFriendsList(); } 
+            if (userProfile && userProfile.username) { ui.auth.classList.add('hidden'); ui.app.classList.remove('hidden'); applyProfile(); initPeer(); renderFriendsList(); loadHistoryUI(null); } 
             else { ui.auth.classList.remove('hidden'); ui.app.classList.add('hidden'); }
         }
 
@@ -350,10 +409,10 @@
             userProfile = { username: u, avatar: '🐿️', friends: [] }; saveProfile(); checkAuth();
         }
 
-        function logout() { if (peer) peer.destroy(); localStorage.removeItem('chipmunk_neon_user'); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
-        function saveProfile() { localStorage.setItem('chipmunk_neon_user', JSON.stringify(userProfile)); }
-        function saveHistories() { localStorage.setItem('chipmunk_neon_histories', JSON.stringify(chatHistories)); }
-        function formatAvatarHTML(d) { return d.startsWith('data:image') ? `<img src="${d}" class="avatar-img">` : d; }
+        function logout() { if (peer) peer.destroy(); safeSetItem('chipmunk_neon_user', ''); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
+        function saveProfile() { safeSetItem('chipmunk_neon_user', JSON.stringify(userProfile)); }
+        function saveHistories() { safeSetItem('chipmunk_neon_histories', JSON.stringify(chatHistories)); }
+        function formatAvatarHTML(d) { return d && d.startsWith('data:image') ? `<img src="${d}" class="avatar-img">` : (d || '👤'); }
 
         function applyProfile() {
             document.getElementById('my-name-display').innerText = userProfile.username;
@@ -380,6 +439,11 @@
         function copyFriendId() { navigator.clipboard.writeText(currentChatFriendId||document.getElementById('my-id').value); showToast('ID скопирован!'); }
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showToast('Ваш ID скопирован!'); }
 
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) return showToast("Уведомления не поддерживаются в этом браузере", "error");
+            try { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); } catch(e) {}
+        }
+
         function addOrUpdateFriend(id, name, avatar) {
             if (id === document.getElementById('my-id').value) return; let f = userProfile.friends.find(f => f.id === id);
             if (f) { f.name = name; f.avatar = avatar; } else { userProfile.friends.push({ id, name, avatar }); } saveProfile(); renderFriendsList();
@@ -387,7 +451,7 @@
 
         function addFriendManual() {
             const id = document.getElementById('new-friend-id').value.trim(); if (!id) return;
-            addOrUpdateFriend(id, 'Неизвестный', '👤'); document.getElementById('new-friend-id').value = ''; openChatWithId(id);
+            addOrUpdateFriend(id, 'Ожидание...', '👤'); document.getElementById('new-friend-id').value = ''; openChatWithId(id);
         }
 
         function deleteContact(e, id) {
@@ -422,21 +486,18 @@
         function loadHistoryUI(id) {
             const div = document.getElementById('chat-history'); 
             div.innerHTML = '<div class="flex flex-col items-center justify-center my-4"><span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,243,255,0.2)]">P2P Канал Защищен 🔒</span></div>';
-            if (chatHistories[id]) chatHistories[id].forEach(m => renderMessageUI(m.text, m.sender, new Date(m.timestamp), m.file));
+            if (id && chatHistories[id]) chatHistories[id].forEach(m => renderMessageUI(m.text, m.sender, new Date(m.timestamp), m.file));
         }
 
         function initPeer() {
-            peer = new Peer({ 
-                debug: 2, 
-                pingInterval: 10000,
-                config: {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun.cloudflare.com:3478' },
-                        { urls: 'stun:global.stun.twilio.com:3478' }
-                    ]
-                }
-            });
+            if (typeof Peer === 'undefined') { showToast('Ошибка: Библиотека PeerJS не загружена', 'error'); return; }
+            try {
+                peer = new Peer({ 
+                    debug: 2, pingInterval: 10000,
+                    config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] }
+                });
+            } catch(e) { showToast('Сбой создания сети', 'error'); return; }
+            
             peer.on('open', (id) => { document.getElementById('my-id').value = id; setStatus('Online', 'text-neon-cyan'); });
             peer.on('disconnected', () => { setStatus('Offline', 'text-red-500'); if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000); });
             
@@ -456,7 +517,7 @@
                         else showToast(`Новое сообщение от ${d.senderName || 'друга'}`);
                         
                         playMessageSound(); 
-                        if (Notification.permission === "granted" && document.hidden) new Notification(userProfile.friends.find(f => f.id === incomingConn.peer)?.name || 'Сообщение', { body: textToSave, icon: '🐿️' });
+                        try { if (Notification.permission === "granted" && document.hidden) new Notification(userProfile.friends.find(f => f.id === incomingConn.peer)?.name || 'Сообщение', { body: textToSave, icon: '🐿️' }); } catch(e){}
                     }
                 });
             });
@@ -477,10 +538,8 @@
             
             if (dataConnection) dataConnection.close(); dataConnection = peer.connect(id); 
             dataConnection.on('open', () => {
-                setStatus('Online', 'text-neon-cyan'); 
-                dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar });
+                setStatus('Online', 'text-neon-cyan'); dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar });
             });
-            
             dataConnection.on('data', (d) => {
                 if (d.type === 'system_sync') { 
                     addOrUpdateFriend(dataConnection.peer, d.name, d.avatar); 
@@ -492,8 +551,7 @@
                     chatHistories[dataConnection.peer].push({ text: textToSave, sender: 'them', timestamp: Date.now(), file: d.file }); saveHistories();
                     
                     if (currentChatFriendId === dataConnection.peer) renderMessageUI(textToSave, 'them', new Date(), d.file);
-                    else showToast(`Сообщение от ${d.senderName || 'друга'}`);
-                    playMessageSound(); 
+                    else showToast(`Сообщение от ${d.senderName || 'друга'}`); playMessageSound(); 
                 }
             });
             dataConnection.on('error', () => { showToast('Сбой', 'error'); setStatus('Online', 'text-neon-cyan'); });
@@ -501,8 +559,7 @@
 
         function closeChat() { 
             if (dataConnection) { dataConnection.close(); dataConnection = null; } 
-            currentChatFriendId = null; 
-            ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); 
+            currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); 
         }
 
         function sendMessage(e) {
@@ -531,22 +588,22 @@
 
         function renderMessageUI(txt, s, d, fileObj = null) {
             const isMe = s === 'me'; const div = document.createElement('div'); div.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'} animate-pop`;
-            
             let contentHtml = txt;
             if (fileObj) {
-                if (fileObj.fileType.startsWith('image/')) {
-                    contentHtml = `<img src="${fileObj.data}" class="max-w-full rounded-xl mb-2 cursor-pointer hover:opacity-80 border border-white/10 shadow-lg" onclick="window.open('${fileObj.data}', '_blank')"><p class="text-[10px] truncate w-32 sm:w-48 font-mono">${fileObj.fileName}</p>`;
-                } else {
-                    contentHtml = `<a href="${fileObj.data}" download="${fileObj.fileName}" class="flex items-center space-x-3 bg-black/40 p-4 rounded-xl hover:bg-black/60 transition border border-white/5"><i class="fas fa-file-download text-2xl text-neon-cyan"></i><span class="truncate w-32 sm:w-48 text-sm font-bold">${fileObj.fileName}</span></a>`;
-                }
+                if (fileObj.fileType.startsWith('image/')) contentHtml = `<img src="${fileObj.data}" class="max-w-full rounded-xl mb-2 cursor-pointer hover:opacity-80 border border-white/10 shadow-lg" onclick="window.open('${fileObj.data}', '_blank')"><p class="text-[10px] truncate w-32 sm:w-48 font-mono">${fileObj.fileName}</p>`;
+                else contentHtml = `<a href="${fileObj.data}" download="${fileObj.fileName}" class="flex items-center space-x-3 bg-black/40 p-4 rounded-xl hover:bg-black/60 transition border border-white/5"><i class="fas fa-file-download text-2xl text-neon-cyan"></i><span class="truncate w-32 sm:w-48 text-sm font-bold">${fileObj.fileName}</span></a>`;
             }
-
             div.innerHTML = `<div class="max-w-[85%] px-5 py-3 text-sm font-medium ${isMe ? 'msg-me' : 'msg-them'}">${contentHtml}<div class="text-[9px] mt-2 font-mono font-bold tracking-widest opacity-60 ${isMe ? 'text-right text-white' : 'text-left text-neon-cyan'}">${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}</div></div>`;
             document.getElementById('chat-history').appendChild(div); document.getElementById('chat-history').scrollTop = document.getElementById('chat-history').scrollHeight;
         }
 
         async function getMediaAccess(type) {
-            try { if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' ? { facingMode: "user" } : false }); document.getElementById('local-video').srcObject = localStream; return true; } catch (err) { showToast('Камера заблокирована', 'error'); return false; }
+            try { 
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showToast('Камера не поддерживается', 'error'); return false; }
+                if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } 
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' ? { facingMode: "user" } : false }); 
+                document.getElementById('local-video').srcObject = localStream; return true; 
+            } catch (err) { showToast('Доступ к камере запрещен', 'error'); return false; }
         }
 
         function setCallUI(type) {
@@ -558,43 +615,38 @@
             overlay.className = 'ui-layer fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 flex items-center justify-center sm:justify-end bg-black/90 sm:bg-transparent pointer-events-none transition-all duration-300';
             content.className = 'glass-panel p-4 rounded-[2rem] flex flex-col w-full max-w-sm sm:w-80 border border-white/10 pointer-events-auto transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative';
             document.getElementById('minimize-icon').className = 'fas fa-compress-alt text-xs';
-
             document.getElementById('video-overlay').classList.remove('hidden'); document.getElementById('remote-video-loader').classList.remove('hidden');
         }
 
-        async function startCall(type) { if (!dataConnection || !dataConnection.open) return showToast('Соединение не готово', 'error'); if (!(await getMediaAccess(type))) return; currentCallType = type; setCallUI(type); setupMediaConnection(peer.call(dataConnection.peer, localStream, { metadata: { type: type } })); }
-        async function answerCall() { ringtoneAudio.pause(); document.getElementById('incoming-call-modal').classList.add('hidden'); if (!(await getMediaAccess(currentCallType))) { if (incomingCallRef) incomingCallRef.close(); return; } if (incomingCallRef) { currentChatFriendId = incomingCallRef.peer; setCallUI(currentCallType); incomingCallRef.answer(localStream); setupMediaConnection(incomingCallRef); incomingCallRef = null; } }
-        function rejectCall() { ringtoneAudio.pause(); document.getElementById('incoming-call-modal').classList.add('hidden'); if (incomingCallRef) { incomingCallRef.close(); incomingCallRef = null; } }
+        async function startCall(type) { if (!dataConnection || !dataConnection.open) return showToast('Сначала начните чат', 'error'); if (!(await getMediaAccess(type))) return; currentCallType = type; setCallUI(type); setupMediaConnection(peer.call(dataConnection.peer, localStream, { metadata: { type: type } })); }
+        async function answerCall() { try{ringtoneAudio.pause();}catch(e){} document.getElementById('incoming-call-modal').classList.add('hidden'); if (!(await getMediaAccess(currentCallType))) { if (incomingCallRef) incomingCallRef.close(); return; } if (incomingCallRef) { currentChatFriendId = incomingCallRef.peer; setCallUI(currentCallType); incomingCallRef.answer(localStream); setupMediaConnection(incomingCallRef); incomingCallRef = null; } }
+        function rejectCall() { try{ringtoneAudio.pause();}catch(e){} document.getElementById('incoming-call-modal').classList.add('hidden'); if (incomingCallRef) { incomingCallRef.close(); incomingCallRef = null; } }
 
         function setupMediaConnection(c) { mediaConnection = c; c.on('stream', (s) => { const v = document.getElementById('remote-video'); if(v.srcObject !== s){ v.srcObject = s; document.getElementById('remote-video-loader').classList.add('hidden'); } }); c.on('close', endCallLocally); c.on('error', endCallLocally); }
         function endCallLocally() { 
-            ringtoneAudio.pause(); mediaConnection = null; document.getElementById('remote-video').srcObject = null; document.getElementById('video-overlay').classList.add('hidden'); 
-            if(document.pictureInPictureElement) document.exitPictureInPicture().catch(()=>{});
+            try{ringtoneAudio.pause();}catch(e){} mediaConnection = null; document.getElementById('remote-video').srcObject = null; document.getElementById('video-overlay').classList.add('hidden'); 
+            try { if(document.pictureInPictureElement) document.exitPictureInPicture().catch(()=>{}); } catch(e){}
             if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; document.getElementById('local-video').srcObject = null; } 
         }
         function endCall() { if (mediaConnection) mediaConnection.close(); endCallLocally(); }
 
         function toggleMinimizeCall() {
             const overlay = document.getElementById('video-overlay'); const content = document.getElementById('call-content'); const icon = document.getElementById('minimize-icon');
-            if (overlay.classList.contains('minimized-call')) {
-                overlay.classList.remove('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-56');
-                overlay.classList.add('inset-0', 'sm:inset-auto', 'sm:top-4', 'sm:right-4', 'p-4', 'bg-black/90', 'sm:bg-transparent');
-                content.classList.add('w-full', 'max-w-sm', 'sm:w-80'); icon.className = 'fas fa-compress-alt text-xs';
-            } else {
-                overlay.classList.add('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-56');
-                overlay.classList.remove('inset-0', 'sm:inset-auto', 'sm:top-4', 'sm:right-4', 'p-4', 'bg-black/90', 'sm:bg-transparent');
-                content.classList.remove('w-full', 'max-w-sm', 'sm:w-80'); icon.className = 'fas fa-expand-alt text-xs';
-            }
+            if (overlay.classList.contains('minimized-call')) { overlay.classList.remove('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-56'); overlay.classList.add('inset-0', 'sm:inset-auto', 'sm:top-4', 'sm:right-4', 'p-4', 'bg-black/90', 'sm:bg-transparent'); content.classList.add('w-full', 'max-w-sm', 'sm:w-80'); icon.className = 'fas fa-compress-alt text-xs'; } 
+            else { overlay.classList.add('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-56'); overlay.classList.remove('inset-0', 'sm:inset-auto', 'sm:top-4', 'sm:right-4', 'p-4', 'bg-black/90', 'sm:bg-transparent'); content.classList.remove('w-full', 'max-w-sm', 'sm:w-80'); icon.className = 'fas fa-expand-alt text-xs'; }
         }
-        async function toggleNativePiP() { const v = document.getElementById('remote-video'); if (document.pictureInPictureElement) { await document.exitPictureInPicture(); } else if (document.pictureInPictureEnabled && !v.hidden) { await v.requestPictureInPicture(); } else { showToast('Видео не активно', 'error'); } }
+        async function toggleNativePiP() { const v = document.getElementById('remote-video'); try { if (document.pictureInPictureElement) { await document.exitPictureInPicture(); } else if (document.pictureInPictureEnabled && !v.hidden) { await v.requestPictureInPicture(); } else { showToast('Видео не активно', 'error'); } } catch(e){} }
 
         function toggleMic() { if(!localStream) return; micEnabled = !micEnabled; localStream.getAudioTracks().forEach(t => t.enabled = micEnabled); document.getElementById('btn-mic').className = `flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl transition active:scale-95 ${micEnabled ? 'text-white' : 'text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`; }
         function toggleVideo() { if(!localStream || currentCallType === 'audio') return; videoEnabled = !videoEnabled; localStream.getVideoTracks().forEach(t => t.enabled = videoEnabled); document.getElementById('btn-video').className = `flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl transition active:scale-95 ${videoEnabled ? 'text-white' : 'text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`; }
 
-        ui.chatInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
-        ui.chatInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); } });
+        if (ui.chatInput) {
+            ui.chatInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+            ui.chatInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); } });
+        }
         
-        window.addEventListener('DOMContentLoaded', checkAuth);
+        // Запускаем систему проверки авторизации МГНОВЕННО
+        checkAuth();
     </script>
 </body>
 </html>
