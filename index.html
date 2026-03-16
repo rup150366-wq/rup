@@ -23,43 +23,24 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
 
-        body { 
-            margin: 0; padding: 0; overflow: hidden; 
-            font-family: 'Nunito', sans-serif;
-            background-color: #050505; color: #fff; 
-        }
+        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Nunito', sans-serif; background-color: #050505; color: #fff; }
 
-        /* --- СУПЕР ФОН: АНИМИРОВАННЫЙ ГРАДИЕНТ И СФЕРЫ --- */
         .animated-bg {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;
             background: linear-gradient(45deg, #0f0c29, #302b63, #240b36, #4a00e0, #8e2de2, #ff512f, #dd2476);
-            background-size: 400% 400%;
-            animation: gradientBG 20s ease infinite;
+            background-size: 400% 400%; animation: gradientBG 20s ease infinite;
         }
         @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
 
-        /* Плавающие неоновые сферы */
         .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: floatOrb 10s infinite alternate ease-in-out; }
         .orb-1 { width: 300px; height: 300px; background: #ff00aa; top: -50px; left: -50px; animation-delay: 0s; }
         .orb-2 { width: 400px; height: 400px; background: #00f3ff; bottom: -100px; right: -100px; animation-delay: -3s; }
         .orb-3 { width: 250px; height: 250px; background: #ff5500; top: 40%; left: 40%; animation-delay: -7s; }
-        
         @keyframes floatOrb { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
 
-        /* --- GLASSMORPHISM --- */
-        .glass-panel { 
-            background: rgba(15, 15, 20, 0.4); 
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
-        .glass-input { 
-            background: rgba(0, 0, 0, 0.4); 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            color: white; transition: all 0.3s ease;
-        }
+        .glass-panel { background: rgba(15, 15, 20, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); }
+        .glass-input { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: all 0.3s ease; }
         .glass-input:focus { border-color: #ff5500; box-shadow: 0 0 15px rgba(255, 85, 0, 0.4); background: rgba(0, 0, 0, 0.6); outline: none; }
-
         .msg-me { background: linear-gradient(135deg, #ff512f, #dd2476); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(221, 36, 118, 0.3); }
         .msg-them { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); color: white; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
 
@@ -67,7 +48,6 @@
         
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
         .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        
         @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(255,85,0,0.7); } 70% { box-shadow: 0 0 0 15px rgba(255,85,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); } }
         .btn-glow { animation: pulseGlow 2s infinite; }
 
@@ -79,14 +59,12 @@
 </head>
 <body class="h-[100dvh] flex flex-col">
 
-    <!-- ЖИВОЙ ФОН И АНИМАЦИЯ CANVAS -->
     <div class="animated-bg"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
     <canvas id="epic-battle-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.9; pointer-events: none;"></canvas>
 
-    <!-- УВЕДОМЛЕНИЯ -->
     <div id="toast" class="ui-layer fixed top-6 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-white/20 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center font-bold">
         <i id="toast-icon" class="fas fa-bell mr-3 text-neon-cyan"></i>
         <span id="toast-msg" class="text-sm tracking-wide"></span>
@@ -99,12 +77,10 @@
                 <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-spin" style="animation-duration: 3s; filter: blur(15px); opacity: 0.7;"></div>
                 <div class="relative w-full h-full bg-black rounded-full flex items-center justify-center text-7xl border-2 border-white/20">🐿️</div>
             </div>
-            
             <div>
                 <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-blue-500 to-neon-purple tracking-tight mb-2">CHIPMUNK</h1>
                 <p class="text-stone-400 text-xs font-bold tracking-widest uppercase">Neon Edition</p>
             </div>
-            
             <form class="space-y-5" onsubmit="loginUser(event)">
                 <div class="text-left relative">
                     <i class="fas fa-user absolute left-5 top-1/2 transform -translate-y-1/2 text-stone-400"></i>
@@ -119,7 +95,6 @@
 
     <!-- ГЛАВНЫЙ ИНТЕРФЕЙС -->
     <div id="screen-app" class="ui-layer hidden flex-1 flex flex-col h-full bg-transparent">
-        
         <header class="glass-panel p-3 sm:p-4 flex justify-between items-center z-20 flex-shrink-0 rounded-b-3xl mx-2 mt-2">
             <div class="flex items-center space-x-4">
                 <div class="relative cursor-pointer hover:scale-105 transition transform" onclick="openSettings()">
@@ -129,7 +104,7 @@
                 <div class="overflow-hidden">
                     <h1 id="my-name-display" class="text-xl font-black text-white truncate tracking-wide">Имя</h1>
                     <p id="connection-status" class="text-xs text-neon-cyan flex items-center font-bold tracking-widest uppercase mt-1">
-                        <span class="w-2 h-2 rounded-full bg-neon-cyan mr-2 animate-pulse shadow-[0_0_8px_#00f3ff]"></span> Ожидание...
+                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2 shadow-[0_0_8px_#eab308]"></span> Ожидание сети...
                     </p>
                 </div>
             </div>
@@ -137,19 +112,19 @@
         </header>
 
         <main class="flex-1 relative flex overflow-hidden p-2">
-            
+            <!-- КОНТАКТЫ -->
             <div id="view-contacts" class="absolute inset-0 flex flex-col p-2 overflow-y-auto w-full max-w-md mx-auto animate-pop z-10">
                 <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-neon-purple rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-neon-purple rounded-full filter blur-[50px] opacity-20 transition"></div>
                     <h2 class="text-xs font-black mb-3 text-stone-400 uppercase tracking-widest"><i class="fas fa-fingerprint mr-2 text-neon-cyan"></i>Твой цифровой ID</h2>
                     <div class="flex items-center space-x-3 relative z-10">
-                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider">
-                        <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white p-4 rounded-2xl active:scale-90 transition text-xl backdrop-blur-md"><i class="fas fa-clone"></i></button>
+                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider cursor-text">
+                        <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white p-4 rounded-2xl active:scale-90 transition text-xl"><i class="fas fa-clone"></i></button>
                     </div>
                 </div>
 
-                <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
-                    <div class="absolute top-0 left-0 w-32 h-32 bg-orange-500 rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
+                <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-32 h-32 bg-orange-500 rounded-full filter blur-[50px] opacity-20 transition"></div>
                     <h2 class="text-xs font-black mb-4 text-stone-400 uppercase tracking-widest"><i class="fas fa-radar mr-2 text-orange-500"></i>Радар (Поиск)</h2>
                     <div class="space-y-3 relative z-10">
                         <input type="text" id="new-friend-id" placeholder="Введи ID друга..." class="w-full glass-input rounded-2xl px-5 py-4 font-mono text-sm transition">
@@ -165,6 +140,7 @@
                 </div>
             </div>
 
+            <!-- ЧАТ -->
             <div id="view-chat" class="hidden absolute inset-0 flex flex-col z-20 w-full animate-pop px-2 pb-2">
                 <div class="glass-panel rounded-t-[2rem] p-3 sm:p-4 flex justify-between items-center shadow-2xl z-30 mb-2 mt-2">
                     <div class="flex items-center">
@@ -186,9 +162,7 @@
 
                 <div class="glass-panel rounded-b-[2rem] p-3 sm:p-4 flex-shrink-0 z-30">
                     <form onsubmit="sendMessage(event)" class="flex items-end space-x-3 max-w-4xl mx-auto">
-                        <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input hover:bg-white/20 text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl" title="Прикрепить">
-                            <i class="fas fa-plus"></i>
-                        </button>
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input hover:bg-white/20 text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl"><i class="fas fa-plus"></i></button>
                         <input type="file" id="file-input" class="hidden" onchange="sendFile(event)">
                         <textarea id="chat-input" rows="1" placeholder="Написать..." class="flex-1 glass-input rounded-[1.2rem] px-5 py-4 text-base outline-none resize-none max-h-32 min-h-[56px] font-medium"></textarea>
                         <button type="submit" class="bg-gradient-to-tr from-neon-cyan to-blue-600 text-white rounded-[1.2rem] flex items-center justify-center w-14 h-14 shadow-[0_0_15px_rgba(0,243,255,0.4)] flex-shrink-0 active:scale-90 text-xl transition hover:scale-105"><i class="fas fa-paper-plane"></i></button>
@@ -198,7 +172,7 @@
         </main>
     </div>
 
-    <!-- МОДАЛКИ (Профиль и Настройки) -->
+    <!-- МОДАЛКИ -->
     <div id="friend-profile-modal" class="ui-layer hidden absolute inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center z-50 p-4">
         <div class="glass-panel w-full max-w-sm rounded-[2.5rem] p-8 text-center relative animate-pop border-t border-white/20">
             <button onclick="closeFriendProfile()" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 hover:bg-red-500 transition"><i class="fas fa-times"></i></button>
@@ -237,7 +211,7 @@
                     </div>
                 </div>
                 <button onclick="requestNotificationPermission()" class="w-full flex items-center justify-between p-5 glass-input rounded-3xl border border-white/5 hover:bg-white/10 transition active:scale-95">
-                    <span class="text-sm font-bold text-white uppercase tracking-wider"><i class="fas fa-bell mr-3 text-neon-cyan"></i> PUSH Уведомления</span>
+                    <span class="text-sm font-bold text-white uppercase tracking-wider"><i class="fas fa-bell mr-3 text-neon-cyan"></i> Уведомления</span>
                     <i class="fas fa-chevron-right text-stone-500"></i>
                 </button>
                 <button onclick="logout()" class="w-full bg-red-500/20 text-red-400 hover:text-white hover:bg-red-600 font-bold py-5 rounded-3xl transition border border-red-500/30 text-sm uppercase tracking-widest mt-4">Выйти из системы</button>
@@ -245,17 +219,14 @@
         </div>
     </div>
 
-    <!-- ЭКРАН ЗВОНКА -->
+    <!-- ЗВОНОК -->
     <div id="video-overlay" class="ui-layer hidden fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 flex items-center justify-center sm:justify-end bg-black/90 sm:bg-transparent pointer-events-none transition-all duration-300">
         <div id="call-content" class="glass-panel p-4 rounded-[2rem] flex flex-col w-full max-w-sm sm:w-80 border border-white/10 pointer-events-auto transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative">
-            
             <div class="absolute top-5 left-5 z-40"><span id="call-type-badge" class="bg-red-600 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest animate-pulse">Звонок</span></div>
-            
             <div class="absolute top-4 right-4 z-40 flex space-x-2">
                 <button onclick="toggleNativePiP()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-neon-cyan transition active:scale-90"><i class="fas fa-external-link-alt text-xs"></i></button>
                 <button onclick="toggleMinimizeCall()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-neon-cyan transition active:scale-90"><i class="fas fa-compress-alt text-xs" id="minimize-icon"></i></button>
             </div>
-
             <div class="relative w-full aspect-[3/4] bg-black rounded-[1.5rem] overflow-hidden mb-4 mt-12 flex items-center justify-center border border-white/5">
                 <div id="audio-only-remote" class="hidden flex-col items-center justify-center w-full h-full absolute inset-0 z-10 bg-stone-900">
                     <div id="call-remote-avatar" class="w-28 h-28 bg-stone-800 rounded-full flex items-center justify-center text-6xl overflow-hidden border-[3px] border-neon-cyan shadow-[0_0_30px_rgba(0,243,255,0.3)] animate-pulse">👤</div>
@@ -266,11 +237,9 @@
                     <span class="text-xs text-neon-cyan font-bold tracking-widest uppercase animate-pulse">Соединение</span>
                 </div>
             </div>
-            
             <div id="local-video-wrapper" class="relative w-full h-28 bg-black rounded-2xl overflow-hidden mb-4 border border-white/10 shadow-lg">
                 <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
             </div>
-            
             <div class="flex space-x-3">
                 <button onclick="toggleMic()" id="btn-mic" class="flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl text-white transition active:scale-95"><i class="fas fa-microphone"></i></button>
                 <button onclick="toggleVideo()" id="btn-video" class="flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl text-white transition active:scale-95"><i class="fas fa-video"></i></button>
@@ -279,7 +248,7 @@
         </div>
     </div>
 
-    <!-- ВХОДЯЩИЙ ЗВОНОК -->
+    <!-- ВХОДЯЩИЙ -->
     <div id="incoming-call-modal" class="ui-layer hidden absolute inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4">
         <div class="glass-panel rounded-[2.5rem] p-10 w-full max-w-sm text-center animate-pop border-t border-white/20">
             <div class="w-36 h-36 rounded-full flex items-center justify-center mx-auto mb-8 text-6xl relative">
@@ -295,34 +264,24 @@
         </div>
     </div>
 
-    <!-- ЛОГИКА -->
     <script>
-        // ==========================================
-        // 1. АНИМАЦИЯ CANVAS (БРОНЕБОЙНАЯ)
-        // ==========================================
+        // 1. АНИМАЦИЯ
         function initEpicBattle() {
-            const canvas = document.getElementById('epic-battle-canvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            let w, h, particles = [], blocks = [], frameCount = 0;
-            let lastTime = 0; const FPS = 60; const frameInterval = 1000 / FPS;
+            const canvas = document.getElementById('epic-battle-canvas'); if (!canvas) return;
+            const ctx = canvas.getContext('2d'); let w, h, particles = [], blocks = [], frameCount = 0, lastTime = 0; const frameInterval = 1000/60;
 
             function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
             window.addEventListener('resize', resize); resize();
 
             function animate(currentTime) {
                 requestAnimationFrame(animate);
-                if (!lastTime) lastTime = currentTime;
-                const deltaTime = currentTime - lastTime;
-                if (deltaTime < frameInterval) return;
-                lastTime = currentTime - (deltaTime % frameInterval);
+                if (!lastTime) lastTime = currentTime; const dt = currentTime - lastTime;
+                if (dt < frameInterval) return; lastTime = currentTime - (dt % frameInterval);
 
-                ctx.clearRect(0, 0, w, h);
-                frameCount++;
+                ctx.clearRect(0, 0, w, h); frameCount++;
 
                 let heroX = w * 0.8; let heroY = h * 0.5 + Math.sin(frameCount * 0.05) * 10;
-                ctx.font = '90px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('🐿️', heroX, heroY);
+                ctx.font = '90px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🐿️', heroX, heroY);
 
                 if (frameCount % 60 === 0) blocks.push({ x: -100, y: heroY + (Math.random()*120 - 60), speed: 5 + Math.random()*3, size: 50, destroyed: false });
                 let isHitting = blocks.some(b => !b.destroyed && b.x > heroX - 140 && b.x < heroX);
@@ -331,8 +290,7 @@
                 for (let i = blocks.length - 1; i >= 0; i--) {
                     let b = blocks[i]; b.x += b.speed;
                     if (!b.destroyed && b.x > heroX - 110 && b.x < heroX) {
-                        b.destroyed = true;
-                        for(let j=0; j<25; j++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, life: 1 });
+                        b.destroyed = true; for(let j=0; j<25; j++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, life: 1 });
                     }
                     if (!b.destroyed) {
                         ctx.fillStyle = '#dc2626'; ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
@@ -352,61 +310,52 @@
             }
             requestAnimationFrame(animate);
         }
+        try { initEpicBattle(); } catch(e) {}
 
-        // Запуск анимации мгновенно, без ожидания полной прогрузки
-        try { initEpicBattle(); } catch(e) { console.warn("Canvas animation bypassed"); }
-
-
-        // ==========================================
-        // 2. БЕЗОПАСНАЯ ЛОГИКА (ОБХОД БЛОКИРОВОК)
-        // ==========================================
-        let userProfile = null;
-        let chatHistories = {}; 
+        // 2. БРОНЕБОЙНАЯ ЛОГИКА
+        let userProfile = null, chatHistories = {}; 
         
-        // Безопасное чтение памяти (защита от сбоя в WebView)
         function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
-        function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) { console.warn('Browser restricts saving data.'); } }
+        function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) {} }
 
         try {
             const savedUser = safeGetItem('chipmunk_neon_user');
-            if (savedUser) userProfile = JSON.parse(savedUser);
-            const savedHist = safeGetItem('chipmunk_neon_histories');
-            if (savedHist) chatHistories = JSON.parse(savedHist);
-        } catch(e) {
-            console.warn("Storage read failed");
-        }
+            if (savedUser) {
+                userProfile = JSON.parse(savedUser);
+                // Мгновенная генерация постоянного ID, чтобы не ждать сервер
+                if (!userProfile.peerId) {
+                    userProfile.peerId = 'chp_' + Math.random().toString(36).substr(2, 9);
+                    safeSetItem('chipmunk_neon_user', JSON.stringify(userProfile));
+                }
+            }
+            const savedHist = safeGetItem('chipmunk_neon_histories'); if (savedHist) chatHistories = JSON.parse(savedHist);
+        } catch(e) {}
 
         let peer = null, dataConnection = null, mediaConnection = null, localStream = null;
         let incomingCallRef = null, currentCallType = null, currentChatFriendId = null, currentProfileId = null;
         let micEnabled = true, videoEnabled = true;
-        const ringtoneAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3');
-        ringtoneAudio.loop = true;
+        const ringtoneAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3'); ringtoneAudio.loop = true;
 
-        const ui = {
-            auth: document.getElementById('screen-auth'), app: document.getElementById('screen-app'),
-            viewContacts: document.getElementById('view-contacts'), viewChat: document.getElementById('view-chat'),
-            status: document.getElementById('connection-status'), chatInput: document.getElementById('chat-input')
-        };
+        const ui = { auth: document.getElementById('screen-auth'), app: document.getElementById('screen-app'), viewContacts: document.getElementById('view-contacts'), viewChat: document.getElementById('view-chat'), status: document.getElementById('connection-status'), chatInput: document.getElementById('chat-input') };
 
         function showToast(msg, type='info') {
-            const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg;
-            t.classList.remove('opacity-0', 'translate-y-[-20px]'); 
+            const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', 'translate-y-[-20px]'); 
             if(type === 'error') { t.style.background = 'rgba(220, 38, 38, 0.9)'; document.getElementById('toast-icon').className = 'fas fa-exclamation-triangle mr-3 text-white'; }
             else { t.style.background = 'rgba(255, 255, 255, 0.1)'; document.getElementById('toast-icon').className = 'fas fa-bell mr-3 text-neon-cyan'; }
             setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
         }
         
-        function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-2 shadow-[0_0_8px_${c==='text-neon-cyan'?'#00f3ff':'#ff0000'}]"></span> ${t}`; }
+        function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-2 shadow-[0_0_8px_${c==='text-neon-cyan'?'#00f3ff':(c==='text-yellow-400'?'#eab308':'#ef4444')}]"></span> <span class="${c}">${t}</span>`; }
         function playMessageSound() { try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){} }
         
         function checkAuth() {
-            if (userProfile && userProfile.username) { ui.auth.classList.add('hidden'); ui.app.classList.remove('hidden'); applyProfile(); initPeer(); renderFriendsList(); loadHistoryUI(null); } 
+            if (userProfile && userProfile.username) { ui.auth.classList.add('hidden'); ui.app.classList.remove('hidden'); applyProfile(); initPeer(); renderFriendsList(); } 
             else { ui.auth.classList.remove('hidden'); ui.app.classList.add('hidden'); }
         }
 
         function loginUser(e) {
             e.preventDefault(); const u = document.getElementById('auth-username').value.trim(); if (!u) return;
-            userProfile = { username: u, avatar: '🐿️', friends: [] }; saveProfile(); checkAuth();
+            userProfile = { username: u, avatar: '🐿️', friends: [], peerId: 'chp_' + Math.random().toString(36).substr(2, 9) }; saveProfile(); checkAuth();
         }
 
         function logout() { if (peer) peer.destroy(); safeSetItem('chipmunk_neon_user', ''); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
@@ -424,8 +373,7 @@
         function setAvatar(data) { userProfile.avatar = data; saveProfile(); applyProfile(); showToast('Аватар обновлен'); if(dataConnection && dataConnection.open) dataConnection.send({type:'system_sync', name:userProfile.username, avatar:data}); }
         function uploadAvatar(e) {
             const f = e.target.files[0]; if(!f) return; const r = new FileReader();
-            r.onload = e => { const img = new Image(); img.onload = () => { const cvs = document.createElement('canvas'); const cx = cvs.getContext('2d'); cvs.width = 300; cvs.height = 300; cx.drawImage(img, 0, 0, 300, 300); setAvatar(cvs.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; r.readAsDataURL(f);
-            e.target.value = '';
+            r.onload = e => { const img = new Image(); img.onload = () => { const cvs = document.createElement('canvas'); const cx = cvs.getContext('2d'); cvs.width = 300; cvs.height = 300; cx.drawImage(img, 0, 0, 300, 300); setAvatar(cvs.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; r.readAsDataURL(f); e.target.value = '';
         }
 
         function openSettings() { document.getElementById('settings-modal').classList.remove('hidden'); }
@@ -438,29 +386,18 @@
         function closeFriendProfile() { document.getElementById('friend-profile-modal').classList.add('hidden'); }
         function copyFriendId() { navigator.clipboard.writeText(currentChatFriendId||document.getElementById('my-id').value); showToast('ID скопирован!'); }
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showToast('Ваш ID скопирован!'); }
-
-        function requestNotificationPermission() {
-            if (!("Notification" in window)) return showToast("Уведомления не поддерживаются в этом браузере", "error");
-            try { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); } catch(e) {}
-        }
+        function requestNotificationPermission() { try { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); } catch(e) {} }
 
         function addOrUpdateFriend(id, name, avatar) {
             if (id === document.getElementById('my-id').value) return; let f = userProfile.friends.find(f => f.id === id);
             if (f) { f.name = name; f.avatar = avatar; } else { userProfile.friends.push({ id, name, avatar }); } saveProfile(); renderFriendsList();
         }
-
         function addFriendManual() {
             const id = document.getElementById('new-friend-id').value.trim(); if (!id) return;
             addOrUpdateFriend(id, 'Ожидание...', '👤'); document.getElementById('new-friend-id').value = ''; openChatWithId(id);
         }
-
         function deleteContact(e, id) {
-            e.stopPropagation();
-            if(confirm('Стереть контакт из базы?')) {
-                userProfile.friends = userProfile.friends.filter(f => f.id !== id);
-                delete chatHistories[id]; saveProfile(); saveHistories(); renderFriendsList();
-                if(currentChatFriendId === id) closeChat();
-            }
+            e.stopPropagation(); if(confirm('Стереть контакт из базы?')) { userProfile.friends = userProfile.friends.filter(f => f.id !== id); delete chatHistories[id]; saveProfile(); saveHistories(); renderFriendsList(); if(currentChatFriendId === id) closeChat(); }
         }
 
         function renderFriendsList() {
@@ -477,8 +414,7 @@
                             <div class="text-[10px] text-stone-500 font-mono truncate mt-1 tracking-widest">${f.id.substring(0,12)}...</div>
                         </div>
                     </div>
-                    <button onclick="deleteContact(event, '${f.id}')" class="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition flex items-center justify-center flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
-                `;
+                    <button onclick="deleteContact(event, '${f.id}')" class="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition flex items-center justify-center flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>`;
                 list.appendChild(btn);
             });
         }
@@ -490,16 +426,31 @@
         }
 
         function initPeer() {
-            if (typeof Peer === 'undefined') { showToast('Ошибка: Библиотека PeerJS не загружена', 'error'); return; }
+            if (typeof Peer === 'undefined') { showToast('Ошибка: PeerJS не загружена', 'error'); return; }
+            
+            let myId = userProfile.peerId;
+            document.getElementById('my-id').value = myId; // Мгновенный показ ID
+
             try {
-                peer = new Peer({ 
-                    debug: 2, pingInterval: 10000,
+                peer = new Peer(myId, { 
+                    debug: 2,
                     config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] }
                 });
             } catch(e) { showToast('Сбой создания сети', 'error'); return; }
             
-            peer.on('open', (id) => { document.getElementById('my-id').value = id; setStatus('Online', 'text-neon-cyan'); });
-            peer.on('disconnected', () => { setStatus('Offline', 'text-red-500'); if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000); });
+            peer.on('open', (id) => { setStatus('Online', 'text-neon-cyan'); });
+            peer.on('disconnected', () => { setStatus('Переподключение...', 'text-yellow-400'); if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000); });
+            
+            // Если VPN все-таки блокирует соединение - покажем точную ошибку!
+            peer.on('error', (err) => {
+                console.error("Peer error:", err);
+                if (err.type === 'network' || err.type === 'server-error') {
+                    setStatus('Сбой сети (Отключите VPN)', 'text-red-500');
+                    showToast('Сервер недоступен. Выключите VPN', 'error');
+                } else if (err.type === 'peer-unavailable') {
+                    showToast('Собеседник не найден', 'error');
+                }
+            });
             
             peer.on('connection', (incomingConn) => {
                 incomingConn.on('open', () => { incomingConn.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar }); });
@@ -512,12 +463,9 @@
                         let textToSave = d.type === 'file' ? `📁 ${d.file.fileName}` : d.text;
                         if (!chatHistories[incomingConn.peer]) chatHistories[incomingConn.peer] = [];
                         chatHistories[incomingConn.peer].push({ text: textToSave, sender: 'them', timestamp: Date.now(), file: d.file }); saveHistories();
-                        
                         if (currentChatFriendId === incomingConn.peer) renderMessageUI(textToSave, 'them', new Date(), d.file);
-                        else showToast(`Новое сообщение от ${d.senderName || 'друга'}`);
-                        
-                        playMessageSound(); 
-                        try { if (Notification.permission === "granted" && document.hidden) new Notification(userProfile.friends.find(f => f.id === incomingConn.peer)?.name || 'Сообщение', { body: textToSave, icon: '🐿️' }); } catch(e){}
+                        else showToast(`Сообщение от ${d.senderName || 'друга'}`);
+                        playMessageSound(); try { if (Notification.permission === "granted" && document.hidden) new Notification(userProfile.friends.find(f => f.id === incomingConn.peer)?.name || 'Сообщение', { body: textToSave, icon: '🐿️' }); } catch(e){}
                     }
                 });
             });
@@ -537,9 +485,7 @@
             setStatus(`SYNC...`, 'text-yellow-400');
             
             if (dataConnection) dataConnection.close(); dataConnection = peer.connect(id); 
-            dataConnection.on('open', () => {
-                setStatus('Online', 'text-neon-cyan'); dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar });
-            });
+            dataConnection.on('open', () => { setStatus('Online', 'text-neon-cyan'); dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar }); });
             dataConnection.on('data', (d) => {
                 if (d.type === 'system_sync') { 
                     addOrUpdateFriend(dataConnection.peer, d.name, d.avatar); 
@@ -549,7 +495,6 @@
                     let textToSave = d.type === 'file' ? `📁 ${d.file.fileName}` : d.text;
                     if (!chatHistories[dataConnection.peer]) chatHistories[dataConnection.peer] = [];
                     chatHistories[dataConnection.peer].push({ text: textToSave, sender: 'them', timestamp: Date.now(), file: d.file }); saveHistories();
-                    
                     if (currentChatFriendId === dataConnection.peer) renderMessageUI(textToSave, 'them', new Date(), d.file);
                     else showToast(`Сообщение от ${d.senderName || 'друга'}`); playMessageSound(); 
                 }
@@ -557,10 +502,7 @@
             dataConnection.on('error', () => { showToast('Сбой', 'error'); setStatus('Online', 'text-neon-cyan'); });
         }
 
-        function closeChat() { 
-            if (dataConnection) { dataConnection.close(); dataConnection = null; } 
-            currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); 
-        }
+        function closeChat() { if (dataConnection) { dataConnection.close(); dataConnection = null; } currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); }
 
         function sendMessage(e) {
             e.preventDefault(); const txt = document.getElementById('chat-input').value.trim(); if (!txt || !dataConnection || !dataConnection.open) return;
@@ -582,8 +524,7 @@
                     chatHistories[currentChatFriendId].push({ text: `📁 ${file.name}`, sender: 'me', timestamp: Date.now(), file: fileObj }); 
                     saveHistories(); renderMessageUI(`📁 ${file.name}`, 'me', new Date(), fileObj);
                 } else { showToast('Собеседник оффлайн', 'error'); }
-            }; 
-            reader.readAsDataURL(file); e.target.value = '';
+            }; reader.readAsDataURL(file); e.target.value = '';
         }
 
         function renderMessageUI(txt, s, d, fileObj = null) {
@@ -645,7 +586,6 @@
             ui.chatInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); } });
         }
         
-        // Запускаем систему проверки авторизации МГНОВЕННО
         checkAuth();
     </script>
 </body>
