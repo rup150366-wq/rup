@@ -3,62 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chipmunk Messenger</title>
+    <title>Chipmunk Neon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { chipmunk: { light: '#f97316', DEFAULT: '#ea580c', dark: '#9a3412' } } } }
+            theme: { 
+                extend: { 
+                    colors: { 
+                        chipmunk: { light: '#f97316', DEFAULT: '#ff5500', dark: '#cc4400' },
+                        neon: { cyan: '#00f3ff', purple: '#9d00ff', pink: '#ff00aa' }
+                    } 
+                } 
+            }
         }
     </script>
     <style>
-        body { background-color: #050505; color: #fff; margin: 0; padding: 0; overflow: hidden; }
-        #local-video { transform: scaleX(-1); }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 10px; }
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+
+        body { 
+            margin: 0; padding: 0; overflow: hidden; 
+            font-family: 'Nunito', sans-serif;
+            background-color: #050505; color: #fff; 
+        }
+
+        /* --- СУПЕР ФОН: АНИМИРОВАННЫЙ ГРАДИЕНТ И СФЕРЫ --- */
+        .animated-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #240b36, #4a00e0, #8e2de2, #ff512f, #dd2476);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+        }
+        @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+
+        /* Плавающие неоновые сферы (работают везде, не вызывают черный экран) */
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: floatOrb 10s infinite alternate ease-in-out; }
+        .orb-1 { width: 300px; height: 300px; background: #ff00aa; top: -50px; left: -50px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: #00f3ff; bottom: -100px; right: -100px; animation-delay: -3s; }
+        .orb-3 { width: 250px; height: 250px; background: #ff5500; top: 40%; left: 40%; animation-delay: -7s; }
         
-        .glass-panel { background: rgba(20, 20, 20, 0.65); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .glass-input { background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255,255,255,0.1); color: white; }
+        @keyframes floatOrb { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
+
+        /* --- GLASSMORPHISM (МАТОВоЕ СТЕКЛО) --- */
+        .glass-panel { 
+            background: rgba(15, 15, 20, 0.4); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        .glass-input { 
+            background: rgba(0, 0, 0, 0.4); 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            color: white; transition: all 0.3s ease;
+        }
+        .glass-input:focus { border-color: #ff5500; box-shadow: 0 0 15px rgba(255, 85, 0, 0.4); background: rgba(0, 0, 0, 0.6); outline: none; }
+
+        /* --- КРАСИВЫЕ ПУЗЫРИ ЧАТА --- */
+        .msg-me { background: linear-gradient(135deg, #ff512f, #dd2476); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(221, 36, 118, 0.3); }
+        .msg-them { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); color: white; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+
         .avatar-img { object-fit: cover; width: 100%; height: 100%; border-radius: 50%; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fadeIn 0.3s ease forwards; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(255,85,0,0.7); } 70% { box-shadow: 0 0 0 15px rgba(255,85,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); } }
+        .btn-glow { animation: pulseGlow 2s infinite; }
 
-        /* Холст для мультфильма */
-        #epic-battle-canvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; opacity: 0.9; pointer-events: none;
-        }
+        #local-video { transform: scaleX(-1); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #ff5500; border-radius: 10px; }
         .ui-layer { position: relative; z-index: 10; }
     </style>
 </head>
-<body class="font-sans h-[100dvh] flex flex-col">
+<body class="h-[100dvh] flex flex-col">
 
-    <!-- CANVAS АНИМАЦИЯ -->
-    <canvas id="epic-battle-canvas"></canvas>
+    <!-- ЖИВОЙ ФОН (БЕЗ JS, РАБОТАЕТ ИДЕАЛЬНО) -->
+    <div class="animated-bg"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
     <!-- УВЕДОМЛЕНИЯ -->
-    <div id="toast" class="ui-layer fixed top-4 left-1/2 transform -translate-x-1/2 bg-chipmunk-dark text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center">
-        <i id="toast-icon" class="fas fa-info-circle mr-2"></i>
-        <span id="toast-msg" class="font-medium text-sm"></span>
+    <div id="toast" class="ui-layer fixed top-6 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-white/20 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center font-bold">
+        <i id="toast-icon" class="fas fa-bell mr-3 text-neon-cyan"></i>
+        <span id="toast-msg" class="text-sm tracking-wide"></span>
     </div>
 
     <!-- АВТОРИЗАЦИЯ -->
-    <div id="screen-auth" class="ui-layer absolute inset-0 flex flex-col items-center justify-center p-4 bg-black/50 z-40">
-        <div class="w-full max-w-sm space-y-6 text-center animate-fade glass-panel p-8 rounded-3xl">
-            <div class="w-32 h-32 bg-chipmunk rounded-full flex items-center justify-center mx-auto text-7xl shadow-[0_0_30px_#ea580c] mb-2 border-4 border-stone-800">🐿️</div>
-            <h1 class="text-4xl font-extrabold text-white drop-shadow-lg">Chipmunk</h1>
-            <p class="text-stone-300 text-sm font-medium">Безопасный P2P мессенджер</p>
+    <div id="screen-auth" class="ui-layer absolute inset-0 flex flex-col items-center justify-center p-4 z-40 bg-black/40 backdrop-blur-sm">
+        <div class="w-full max-w-sm space-y-8 text-center animate-pop glass-panel p-10 rounded-[2.5rem]">
+            <div class="relative w-36 h-36 mx-auto">
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-spin" style="animation-duration: 3s; filter: blur(15px); opacity: 0.7;"></div>
+                <div class="relative w-full h-full bg-black rounded-full flex items-center justify-center text-7xl border-2 border-white/20">🐿️</div>
+            </div>
             
-            <form class="space-y-4 mt-6" onsubmit="loginUser(event)">
-                <div class="text-left">
-                    <label class="block text-xs font-bold text-stone-300 uppercase tracking-wider mb-2">Ваше имя (Никнейм)</label>
-                    <input type="text" id="auth-username" required placeholder="Например: Alex99" class="w-full glass-input rounded-xl px-5 py-4 outline-none focus:border-chipmunk transition text-lg font-medium">
+            <div>
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-blue-500 to-neon-purple tracking-tight mb-2">CHIPMUNK</h1>
+                <p class="text-stone-400 text-xs font-bold tracking-widest uppercase">Neon Edition</p>
+            </div>
+            
+            <form class="space-y-5" onsubmit="loginUser(event)">
+                <div class="text-left relative">
+                    <i class="fas fa-user absolute left-5 top-1/2 transform -translate-y-1/2 text-stone-400"></i>
+                    <input type="text" id="auth-username" required placeholder="Ваш Никнейм..." class="w-full glass-input rounded-2xl pl-12 pr-5 py-4 text-lg font-bold placeholder-stone-500">
                 </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-chipmunk to-orange-500 text-white font-bold py-4 rounded-xl transition shadow-[0_0_15px_rgba(234,88,12,0.4)] active:scale-95 text-lg">
-                    Войти в систему <i class="fas fa-arrow-right ml-2"></i>
+                <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-pink-600 text-white font-black py-4 rounded-2xl transition hover:scale-105 active:scale-95 text-lg btn-glow uppercase tracking-wider">
+                    Ворваться в сеть <i class="fas fa-rocket ml-2"></i>
                 </button>
             </form>
         </div>
@@ -66,243 +119,203 @@
 
     <!-- ГЛАВНЫЙ ИНТЕРФЕЙС -->
     <div id="screen-app" class="ui-layer hidden flex-1 flex flex-col h-full bg-transparent">
-        <header class="glass-panel border-b border-white/10 p-3 sm:p-4 flex justify-between items-center z-20 flex-shrink-0 rounded-b-2xl mx-2 mt-2">
-            <div class="flex items-center space-x-3">
-                <div id="my-avatar-display" class="w-12 h-12 bg-chipmunk rounded-full flex items-center justify-center text-2xl shadow-md cursor-pointer overflow-hidden border-2 border-white/20" onclick="openSettings()">🐿️</div>
+        
+        <!-- ШАПКА -->
+        <header class="glass-panel p-3 sm:p-4 flex justify-between items-center z-20 flex-shrink-0 rounded-b-3xl mx-2 mt-2">
+            <div class="flex items-center space-x-4">
+                <div class="relative cursor-pointer hover:scale-105 transition transform" onclick="openSettings()">
+                    <div class="absolute inset-0 bg-neon-cyan rounded-full animate-ping opacity-20"></div>
+                    <div id="my-avatar-display" class="relative w-14 h-14 bg-stone-800 rounded-full flex items-center justify-center text-3xl shadow-lg overflow-hidden border-2 border-neon-cyan">🐿️</div>
+                </div>
                 <div class="overflow-hidden">
-                    <h1 id="my-name-display" class="text-lg sm:text-xl font-bold text-white truncate">Имя</h1>
-                    <p id="connection-status" class="text-xs text-stone-300 flex items-center truncate font-medium">
-                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-1 animate-pulse shadow-[0_0_5px_rgba(234,179,8,0.8)]"></span> Подключение...
+                    <h1 id="my-name-display" class="text-xl font-black text-white truncate tracking-wide">Имя</h1>
+                    <p id="connection-status" class="text-xs text-neon-cyan flex items-center font-bold tracking-widest uppercase mt-1">
+                        <span class="w-2 h-2 rounded-full bg-neon-cyan mr-2 animate-pulse shadow-[0_0_8px_#00f3ff]"></span> Online
                     </p>
                 </div>
             </div>
-            <button onclick="openSettings()" class="w-12 h-12 rounded-full glass-input flex items-center justify-center hover:bg-chipmunk transition text-lg"><i class="fas fa-cog"></i></button>
+            <button onclick="openSettings()" class="w-12 h-12 rounded-full glass-input flex items-center justify-center hover:bg-white/20 transition text-xl hover:rotate-90"><i class="fas fa-sliders-h"></i></button>
         </header>
 
         <main class="flex-1 relative flex overflow-hidden p-2">
-            <!-- КОНТАКТЫ -->
-            <div id="view-contacts" class="absolute inset-0 flex flex-col p-2 overflow-y-auto w-full max-w-md mx-auto animate-fade z-10">
-                <div class="glass-panel rounded-3xl p-5 mb-4">
-                    <h2 class="text-xs font-bold mb-2 text-stone-300 uppercase tracking-wider">Мой системный ID</h2>
-                    <div class="flex items-center space-x-2 relative">
-                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-xl px-4 py-3 outline-none font-mono text-sm w-full transition">
-                        <button onclick="copyId()" class="bg-chipmunk text-white p-3 rounded-xl active:scale-95 text-lg shadow-md"><i class="fas fa-copy"></i></button>
+            
+            <!-- КОНТАКТЫ И ID -->
+            <div id="view-contacts" class="absolute inset-0 flex flex-col p-2 overflow-y-auto w-full max-w-md mx-auto animate-pop z-10">
+                
+                <!-- Мой ID -->
+                <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-neon-purple rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
+                    <h2 class="text-xs font-black mb-3 text-stone-400 uppercase tracking-widest"><i class="fas fa-fingerprint mr-2 text-neon-cyan"></i>Твой цифровой ID</h2>
+                    <div class="flex items-center space-x-3 relative z-10">
+                        <input type="text" id="my-id" readonly value="Подключение..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider">
+                        <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white p-4 rounded-2xl active:scale-90 transition text-xl backdrop-blur-md"><i class="fas fa-clone"></i></button>
                     </div>
                 </div>
 
-                <div class="glass-panel rounded-3xl p-5 mb-4">
-                    <h2 class="text-xs font-bold mb-3 text-stone-300 uppercase tracking-wider">Добавить контакт</h2>
-                    <div class="space-y-3">
-                        <input type="text" id="new-friend-id" placeholder="Длинный ID друга..." class="w-full glass-input rounded-xl px-4 py-3 outline-none font-mono text-sm transition focus:border-chipmunk">
-                        <button onclick="addFriendManual()" class="w-full bg-stone-700 hover:bg-stone-600 text-white font-bold py-3 rounded-xl transition text-sm flex items-center justify-center active:scale-95">
-                            <i class="fas fa-user-plus mr-2"></i> Сохранить в книжку
+                <!-- Добавить -->
+                <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-32 h-32 bg-orange-500 rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
+                    <h2 class="text-xs font-black mb-4 text-stone-400 uppercase tracking-widest"><i class="fas fa-radar mr-2 text-orange-500"></i>Радар (Поиск)</h2>
+                    <div class="space-y-3 relative z-10">
+                        <input type="text" id="new-friend-id" placeholder="Введи ID друга..." class="w-full glass-input rounded-2xl px-5 py-4 font-mono text-sm transition">
+                        <button onclick="addFriendManual()" class="w-full bg-gradient-to-r from-neon-purple to-blue-600 text-white font-bold py-4 rounded-2xl transition text-sm flex items-center justify-center hover:scale-[1.02] active:scale-95 shadow-lg uppercase tracking-wider">
+                            Установить связь <i class="fas fa-bolt ml-2"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="flex-1 glass-panel rounded-3xl p-5 overflow-y-auto">
-                    <h2 class="text-xs font-bold mb-3 text-stone-300 uppercase tracking-wider"><i class="fas fa-address-book mr-1"></i> Записная книжка</h2>
+                <!-- Список -->
+                <div class="flex-1 glass-panel rounded-3xl p-6 overflow-y-auto">
+                    <h2 class="text-xs font-black mb-4 text-stone-400 uppercase tracking-widest"><i class="fas fa-users mr-2 text-pink-500"></i>Связи</h2>
                     <div id="friends-list" class="space-y-3"></div>
                 </div>
             </div>
 
-            <!-- ЧАТ -->
-            <div id="view-chat" class="hidden absolute inset-0 flex flex-col z-20 w-full animate-fade px-2 pb-2">
-                <div class="glass-panel rounded-t-3xl p-3 flex justify-between items-center shadow-lg z-30 mb-2 mt-2">
+            <!-- ОКНО ЧАТА -->
+            <div id="view-chat" class="hidden absolute inset-0 flex flex-col z-20 w-full animate-pop px-2 pb-2">
+                
+                <!-- Шапка чата -->
+                <div class="glass-panel rounded-t-[2rem] p-3 sm:p-4 flex justify-between items-center shadow-2xl z-30 mb-2 mt-2">
                     <div class="flex items-center">
-                        <button onclick="closeChat()" class="mr-3 w-10 h-10 rounded-full glass-input flex items-center justify-center active:scale-90 text-lg"><i class="fas fa-arrow-left"></i></button>
-                        <div id="chat-header-avatar" class="w-10 h-10 bg-stone-700 rounded-full flex items-center justify-center text-lg mr-3 overflow-hidden border border-white/20 cursor-pointer" onclick="openFriendProfile()">👤</div>
-                        <h2 id="chat-header-name" class="font-bold text-base sm:text-lg text-white truncate cursor-pointer" onclick="openFriendProfile()">Собеседник</h2>
+                        <button onclick="closeChat()" class="mr-4 w-12 h-12 rounded-full glass-input flex items-center justify-center active:scale-90 text-xl hover:bg-white/10 transition"><i class="fas fa-chevron-left"></i></button>
+                        <div id="chat-header-avatar" class="w-12 h-12 bg-stone-800 rounded-full flex items-center justify-center text-2xl mr-4 overflow-hidden border-2 border-white/20 cursor-pointer shadow-lg" onclick="openFriendProfile()">👤</div>
+                        <h2 id="chat-header-name" class="font-black text-lg sm:text-xl text-white truncate cursor-pointer hover:text-neon-cyan transition tracking-wide" onclick="openFriendProfile()">Собеседник</h2>
                     </div>
-                    <div class="flex space-x-2">
-                        <button onclick="startCall('audio')" class="w-10 h-10 rounded-full glass-input text-green-500 flex items-center justify-center active:scale-90 text-lg shadow-md"><i class="fas fa-phone-alt"></i></button>
-                        <button onclick="startCall('video')" class="w-10 h-10 rounded-full glass-input text-chipmunk flex items-center justify-center active:scale-90 text-lg shadow-md"><i class="fas fa-video"></i></button>
-                    </div>
-                </div>
-
-                <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3 z-10 glass-panel rounded-3xl mb-2">
-                    <div class="flex flex-col items-center justify-center my-2">
-                        <span class="bg-black/50 text-stone-300 text-xs px-4 py-1.5 rounded-full text-center font-medium">P2P шифрование активно 🔒</span>
+                    <div class="flex space-x-3">
+                        <button onclick="startCall('audio')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-green-500/40 border border-white/10 text-green-400 flex items-center justify-center active:scale-90 text-xl transition"><i class="fas fa-phone-alt"></i></button>
+                        <button onclick="startCall('video')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-orange-500/40 border border-white/10 text-orange-400 flex items-center justify-center active:scale-90 text-xl transition"><i class="fas fa-video"></i></button>
                     </div>
                 </div>
 
-                <div class="glass-panel rounded-b-3xl p-3 flex-shrink-0 z-30">
-                    <form onsubmit="sendMessage(event)" class="flex items-end space-x-2 max-w-4xl mx-auto">
-                        <!-- Кнопка отправки файла -->
-                        <button type="button" onclick="document.getElementById('file-input').click()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-2xl flex items-center justify-center w-14 h-14 shadow-lg flex-shrink-0 transition active:scale-90 border border-white/10 text-xl" title="Прикрепить файл">
-                            <i class="fas fa-paperclip"></i>
+                <!-- История -->
+                <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 z-10 glass-panel rounded-[2rem] mb-2 flex flex-col">
+                    <div class="flex flex-col items-center justify-center my-4">
+                        <span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,243,255,0.2)]">P2P Канал Защищен 🔒</span>
+                    </div>
+                    <!-- Сообщения будут падать сюда -->
+                </div>
+
+                <!-- Ввод -->
+                <div class="glass-panel rounded-b-[2rem] p-3 sm:p-4 flex-shrink-0 z-30">
+                    <form onsubmit="sendMessage(event)" class="flex items-end space-x-3 max-w-4xl mx-auto">
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input hover:bg-white/20 text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl" title="Прикрепить">
+                            <i class="fas fa-plus"></i>
                         </button>
                         <input type="file" id="file-input" class="hidden" onchange="sendFile(event)">
 
-                        <textarea id="chat-input" rows="1" placeholder="Сообщение..." class="flex-1 glass-input rounded-2xl px-5 py-4 text-base outline-none resize-none max-h-32 min-h-[56px] focus:border-chipmunk"></textarea>
+                        <textarea id="chat-input" rows="1" placeholder="Написать..." class="flex-1 glass-input rounded-[1.2rem] px-5 py-4 text-base outline-none resize-none max-h-32 min-h-[56px] font-medium"></textarea>
                         
-                        <button type="submit" class="bg-chipmunk text-white rounded-2xl flex items-center justify-center w-14 h-14 shadow-lg flex-shrink-0 active:scale-90 text-xl"><i class="fas fa-paper-plane"></i></button>
+                        <button type="submit" class="bg-gradient-to-tr from-neon-cyan to-blue-600 text-white rounded-[1.2rem] flex items-center justify-center w-14 h-14 shadow-[0_0_15px_rgba(0,243,255,0.4)] flex-shrink-0 active:scale-90 text-xl transition hover:scale-105"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- МОДАЛКИ (Настройки, Профиль, Звонки) -->
-    <div id="friend-profile-modal" class="ui-layer hidden absolute inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-        <div class="glass-panel w-full max-w-sm rounded-3xl p-8 text-center relative animate-fade">
-            <button onclick="closeFriendProfile()" class="absolute top-4 right-4 w-10 h-10 rounded-full glass-input flex items-center justify-center text-white active:scale-90"><i class="fas fa-times"></i></button>
-            <div id="friend-profile-avatar" class="w-40 h-40 mx-auto rounded-full bg-stone-700 flex items-center justify-center text-7xl overflow-hidden border-[4px] border-chipmunk mb-6 text-white">👤</div>
-            <h2 id="friend-profile-name" class="text-3xl font-extrabold mb-2 truncate text-white">Имя</h2>
-            <div class="mt-4 flex items-center justify-center space-x-2 glass-input py-3 px-4 rounded-xl mx-auto cursor-pointer" onclick="copyFriendId()">
-                <p id="friend-profile-id" class="text-xs font-mono truncate max-w-[200px] text-stone-300">ID...</p>
-                <i class="fas fa-copy text-chipmunk"></i>
+    <!-- МОДАЛКИ (Профиль и Настройки) -->
+    <div id="friend-profile-modal" class="ui-layer hidden absolute inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+        <div class="glass-panel w-full max-w-sm rounded-[2.5rem] p-8 text-center relative animate-pop border-t border-white/20">
+            <button onclick="closeFriendProfile()" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 hover:bg-red-500 transition"><i class="fas fa-times"></i></button>
+            <div id="friend-profile-avatar" class="w-36 h-36 mx-auto rounded-full bg-stone-800 flex items-center justify-center text-7xl overflow-hidden border-[4px] border-neon-purple mb-6 text-white shadow-[0_0_30px_rgba(157,0,255,0.4)]">👤</div>
+            <h2 id="friend-profile-name" class="text-3xl font-black mb-2 truncate text-white tracking-wide">Имя</h2>
+            <div class="mt-4 flex items-center justify-center space-x-3 bg-black/40 py-3 px-5 rounded-2xl mx-auto cursor-pointer hover:bg-black/60 transition border border-white/5" onclick="copyFriendId()">
+                <p id="friend-profile-id" class="text-xs font-mono truncate max-w-[200px] text-neon-cyan font-bold">ID...</p>
+                <i class="fas fa-copy text-stone-400"></i>
             </div>
         </div>
     </div>
 
-    <div id="settings-modal" class="ui-layer hidden absolute inset-0 bg-black/80 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-        <div class="glass-panel w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 overflow-y-auto max-h-[90vh] animate-fade">
-            <div class="flex justify-between items-start mb-4">
+    <div id="settings-modal" class="ui-layer hidden absolute inset-0 bg-black/60 backdrop-blur-xl flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+        <div class="glass-panel w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 overflow-y-auto max-h-[90vh] animate-pop border-t border-white/20">
+            <div class="flex justify-between items-start mb-6">
                 <div class="w-10"></div>
-                <div class="flex flex-col items-center text-center">
-                    <div id="settings-avatar-big" class="w-32 h-32 bg-chipmunk rounded-full flex items-center justify-center text-6xl overflow-hidden mb-4 border-[4px] border-white/20">🐿️</div>
-                    <h2 id="settings-name-big" class="text-2xl font-extrabold text-white">Имя</h2>
+                <div class="flex flex-col items-center text-center relative">
+                    <div class="absolute inset-0 bg-orange-500 rounded-full filter blur-[40px] opacity-40"></div>
+                    <div id="settings-avatar-big" class="relative w-40 h-40 bg-stone-800 rounded-full flex items-center justify-center text-7xl overflow-hidden mb-4 border-[4px] border-white shadow-2xl">🐿️</div>
+                    <h2 id="settings-name-big" class="text-3xl font-black text-white tracking-wide">Имя</h2>
                 </div>
-                <button onclick="closeSettings()" class="w-10 h-10 rounded-full glass-input flex items-center justify-center active:scale-90 text-lg"><i class="fas fa-times"></i></button>
+                <button onclick="closeSettings()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 text-lg hover:bg-red-500 transition"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="space-y-4 mt-6">
-                <div class="glass-input p-4 rounded-3xl">
-                    <label class="block text-xs font-bold text-stone-400 uppercase mb-3">Сменить аватар</label>
+            <div class="space-y-4 mt-8">
+                <div class="glass-input p-5 rounded-3xl border border-white/5">
+                    <label class="block text-[10px] font-black text-stone-400 uppercase mb-4 tracking-widest">Аватарка</label>
                     <div class="flex justify-between">
-                        <button onclick="setAvatar('🐿️')" class="w-12 h-12 text-2xl rounded-xl bg-black/50 border border-white/10 hover:border-chipmunk transition">🐿️</button>
-                        <button onclick="setAvatar('🦊')" class="w-12 h-12 text-2xl rounded-xl bg-black/50 border border-white/10 hover:border-chipmunk transition">🦊</button>
-                        <button onclick="setAvatar('🐼')" class="w-12 h-12 text-2xl rounded-xl bg-black/50 border border-white/10 hover:border-chipmunk transition">🐼</button>
-                        <div class="relative w-12 h-12">
+                        <button onclick="setAvatar('🐿️')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 hover:bg-white/20 transition hover:scale-110">🐿️</button>
+                        <button onclick="setAvatar('🦊')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 hover:bg-white/20 transition hover:scale-110">🦊</button>
+                        <button onclick="setAvatar('👽')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 hover:bg-white/20 transition hover:scale-110">👽</button>
+                        <div class="relative w-14 h-14 transition hover:scale-110">
                             <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadAvatar(event)">
-                            <div class="w-full h-full rounded-xl bg-chipmunk flex items-center justify-center text-white text-xl hover:bg-orange-500 transition cursor-pointer"><i class="fas fa-camera"></i></div>
+                            <div class="w-full h-full rounded-2xl bg-gradient-to-br from-neon-purple to-neon-cyan flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(0,243,255,0.4)]"><i class="fas fa-image"></i></div>
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center justify-between p-4 glass-input rounded-3xl">
-                    <span class="text-sm font-bold text-white"><i class="fas fa-bell mr-2 text-chipmunk"></i> Уведомления</span>
-                    <button onclick="requestNotificationPermission()" class="bg-chipmunk text-white px-4 py-2 rounded-xl text-sm font-bold transition hover:bg-orange-500">Включить</button>
-                </div>
-                <button onclick="logout()" class="w-full bg-red-500/20 text-red-400 hover:text-white hover:bg-red-500 font-bold py-4 rounded-2xl transition border border-red-500/30 text-lg">Сменить аккаунт</button>
+                <button onclick="requestNotificationPermission()" class="w-full flex items-center justify-between p-5 glass-input rounded-3xl border border-white/5 hover:bg-white/10 transition active:scale-95">
+                    <span class="text-sm font-bold text-white uppercase tracking-wider"><i class="fas fa-bell mr-3 text-neon-cyan"></i> PUSH Уведомления</span>
+                    <i class="fas fa-chevron-right text-stone-500"></i>
+                </button>
+                <button onclick="logout()" class="w-full bg-red-500/20 text-red-400 hover:text-white hover:bg-red-600 font-bold py-5 rounded-3xl transition border border-red-500/30 text-sm uppercase tracking-widest mt-4">Выйти из системы</button>
             </div>
         </div>
     </div>
 
-    <!-- Звонки: Наложение -->
+    <!-- ЭКРАН ЗВОНКА -->
     <div id="video-overlay" class="ui-layer hidden fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 flex items-center justify-center sm:justify-end bg-black/90 sm:bg-transparent pointer-events-none transition-all duration-300">
-        <div id="call-content" class="glass-panel p-3 rounded-3xl flex flex-col w-full max-w-sm sm:w-72 border border-white/20 pointer-events-auto transition-all duration-300 shadow-2xl relative">
+        <div id="call-content" class="glass-panel p-4 rounded-[2rem] flex flex-col w-full max-w-sm sm:w-80 border border-white/10 pointer-events-auto transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative">
             
-            <div class="absolute top-4 left-4 z-40"><span id="call-type-badge" class="bg-black/80 text-white text-xs px-3 py-1 rounded-full font-medium border border-white/20">Звонок</span></div>
+            <div class="absolute top-5 left-5 z-40"><span id="call-type-badge" class="bg-red-600 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest animate-pulse">Звонок</span></div>
             
-            <!-- Кнопки управления окном (PiP и Свернуть) -->
-            <div class="absolute top-3 right-3 z-40 flex space-x-1">
-                <button onclick="toggleNativePiP()" class="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-chipmunk backdrop-blur-md transition active:scale-90" title="Нативный PiP (Картинка в картинке)"><i class="fas fa-external-link-alt text-[10px]"></i></button>
-                <button onclick="toggleMinimizeCall()" class="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-chipmunk backdrop-blur-md transition active:scale-90" title="Свернуть в мини-чат"><i class="fas fa-compress-alt text-[10px]" id="minimize-icon"></i></button>
+            <div class="absolute top-4 right-4 z-40 flex space-x-2">
+                <button onclick="toggleNativePiP()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-neon-cyan transition active:scale-90"><i class="fas fa-external-link-alt text-xs"></i></button>
+                <button onclick="toggleMinimizeCall()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-neon-cyan transition active:scale-90"><i class="fas fa-compress-alt text-xs" id="minimize-icon"></i></button>
             </div>
 
-            <div class="relative w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden mb-3 mt-10 flex items-center justify-center border border-white/10 shadow-inner">
+            <div class="relative w-full aspect-[3/4] bg-black rounded-[1.5rem] overflow-hidden mb-4 mt-12 flex items-center justify-center border border-white/5">
                 <div id="audio-only-remote" class="hidden flex-col items-center justify-center w-full h-full absolute inset-0 z-10 bg-stone-900">
-                    <div id="call-remote-avatar" class="w-24 h-24 bg-stone-800 rounded-full flex items-center justify-center text-5xl overflow-hidden border-2 border-chipmunk animate-pulse">👤</div>
+                    <div id="call-remote-avatar" class="w-28 h-28 bg-stone-800 rounded-full flex items-center justify-center text-6xl overflow-hidden border-[3px] border-neon-cyan shadow-[0_0_30px_rgba(0,243,255,0.3)] animate-pulse">👤</div>
                 </div>
                 <video id="remote-video" autoplay playsinline class="w-full h-full object-cover hidden"></video>
                 <div id="remote-video-loader" class="absolute inset-0 flex flex-col justify-center items-center bg-black/80 z-20">
-                    <i class="fas fa-spinner fa-spin text-3xl text-chipmunk mb-2"></i><span class="text-xs text-stone-300">Соединение...</span>
+                    <div class="w-12 h-12 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <span class="text-xs text-neon-cyan font-bold tracking-widest uppercase animate-pulse">Соединение</span>
                 </div>
             </div>
             
-            <div id="local-video-wrapper" class="relative w-full h-24 bg-black rounded-xl overflow-hidden mb-3 border border-white/10 shadow-md">
+            <div id="local-video-wrapper" class="relative w-full h-28 bg-black rounded-2xl overflow-hidden mb-4 border border-white/10 shadow-lg">
                 <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
             </div>
             
-            <div class="flex space-x-2">
-                <button onclick="toggleMic()" id="btn-mic" class="flex-1 glass-input p-3 rounded-xl text-lg text-white transition hover:bg-stone-700"><i class="fas fa-microphone"></i></button>
-                <button onclick="toggleVideo()" id="btn-video" class="flex-1 glass-input p-3 rounded-xl text-lg text-white transition hover:bg-stone-700"><i class="fas fa-video"></i></button>
-                <button onclick="endCall()" class="flex-2 bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl font-bold w-full text-lg text-white shadow-[0_0_15px_rgba(220,38,38,0.5)] transition"><i class="fas fa-phone-slash"></i></button>
+            <div class="flex space-x-3">
+                <button onclick="toggleMic()" id="btn-mic" class="flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl text-white transition active:scale-95"><i class="fas fa-microphone"></i></button>
+                <button onclick="toggleVideo()" id="btn-video" class="flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl text-white transition active:scale-95"><i class="fas fa-video"></i></button>
+                <button onclick="endCall()" class="flex-2 bg-red-600 hover:bg-red-500 px-6 py-4 rounded-2xl font-bold w-full text-xl text-white shadow-[0_0_20px_rgba(220,38,38,0.5)] transition active:scale-95"><i class="fas fa-phone-slash"></i></button>
             </div>
         </div>
     </div>
 
-    <div id="incoming-call-modal" class="ui-layer hidden absolute inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-        <div class="glass-panel rounded-3xl p-8 w-full max-w-sm text-center animate-fade border border-white/20">
-            <div class="w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl relative">
-                <div class="absolute inset-0 bg-green-500/40 rounded-full animate-ping"></div>
-                <div id="incoming-call-icon" class="bg-stone-800 w-full h-full rounded-full flex items-center justify-center relative z-10 text-white overflow-hidden border-4 border-green-500"><i class="fas fa-phone-alt"></i></div>
+    <!-- ВХОДЯЩИЙ ЗВОНОК -->
+    <div id="incoming-call-modal" class="ui-layer hidden absolute inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+        <div class="glass-panel rounded-[2.5rem] p-10 w-full max-w-sm text-center animate-pop border-t border-white/20">
+            <div class="w-36 h-36 rounded-full flex items-center justify-center mx-auto mb-8 text-6xl relative">
+                <div class="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-30" style="animation-duration: 2s;"></div>
+                <div id="incoming-call-icon" class="bg-stone-800 w-full h-full rounded-full flex items-center justify-center relative z-10 text-white overflow-hidden border-[4px] border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.6)]">👤</div>
             </div>
-            <h2 id="incoming-call-title" class="text-2xl font-bold text-white mb-2">Входящий звонок!</h2>
-            <p id="incoming-caller-name" class="text-stone-300 text-xl font-medium mb-8">Имя</p>
-            <div class="flex space-x-4">
-                <button onclick="answerCall()" class="flex-1 bg-green-500 hover:bg-green-400 text-white font-bold py-5 rounded-2xl shadow-[0_0_20px_rgba(34,197,94,0.5)] text-2xl active:scale-95 transition"><i class="fas fa-phone"></i></button>
-                <button onclick="rejectCall()" class="flex-1 bg-red-500 hover:bg-red-400 text-white font-bold py-5 rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.5)] text-2xl active:scale-95 transition"><i class="fas fa-times"></i></button>
+            <h2 id="incoming-call-title" class="text-[10px] font-black text-green-400 mb-2 uppercase tracking-widest animate-pulse">Входящий вызов</h2>
+            <p id="incoming-caller-name" class="text-white text-3xl font-black mb-10 truncate tracking-wide">Имя</p>
+            <div class="flex space-x-5">
+                <button onclick="answerCall()" class="flex-1 bg-green-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_30px_rgba(34,197,94,0.5)] text-3xl active:scale-90 transition hover:bg-green-400"><i class="fas fa-phone"></i></button>
+                <button onclick="rejectCall()" class="flex-1 bg-red-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_30px_rgba(239,68,68,0.5)] text-3xl active:scale-90 transition hover:bg-red-400"><i class="fas fa-times"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- ЕДИНЫЙ СКРИПТ: АНИМАЦИЯ И ЛОГИКА -->
+    <!-- ЛОГИКА -->
     <script>
         // ==========================================
-        // 1. АНИМАЦИЯ CANVAS (С ОГРАНИЧИТЕЛЕМ 60 FPS)
+        // ЛОГИКА МЕССЕНДЖЕРА (СТАБИЛЬНАЯ P2P)
         // ==========================================
-        function initEpicBattle() {
-            const canvas = document.getElementById('epic-battle-canvas');
-            const ctx = canvas.getContext('2d');
-            let w, h, particles = [], blocks = [], frameCount = 0;
-            let lastTime = 0; const FPS = 60; const frameInterval = 1000 / FPS;
-
-            function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
-            window.addEventListener('resize', resize); resize();
-
-            function animate(currentTime) {
-                requestAnimationFrame(animate);
-                if (!lastTime) lastTime = currentTime;
-                const deltaTime = currentTime - lastTime;
-                if (deltaTime < frameInterval) return;
-                lastTime = currentTime - (deltaTime % frameInterval);
-
-                ctx.clearRect(0, 0, w, h);
-                frameCount++;
-
-                let heroX = w * 0.8; let heroY = h * 0.5 + Math.sin(frameCount * 0.05) * 10;
-
-                ctx.font = '90px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('🐿️', heroX, heroY);
-
-                if (frameCount % 60 === 0) blocks.push({ x: -100, y: heroY + (Math.random()*120 - 60), speed: 5 + Math.random()*3, size: 50, destroyed: false });
-
-                let isHitting = blocks.some(b => !b.destroyed && b.x > heroX - 140 && b.x < heroX);
-                let swordSwing = isHitting ? Math.sin(frameCount * 0.8) * 2.5 : 0;
-
-                for (let i = blocks.length - 1; i >= 0; i--) {
-                    let b = blocks[i]; b.x += b.speed;
-                    if (!b.destroyed && b.x > heroX - 110 && b.x < heroX) {
-                        b.destroyed = true;
-                        for(let j=0; j<25; j++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, life: 1 });
-                    }
-                    if (!b.destroyed) {
-                        ctx.fillStyle = '#dc2626'; ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
-                        ctx.fillStyle = 'white'; ctx.font = 'bold 16px Arial'; ctx.fillText('РКН', b.x, b.y);
-                    } else { blocks.splice(i, 1); }
-                }
-
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    let p = particles[i]; p.x += p.vx; p.y += p.vy; p.life -= 0.04;
-                    if (p.life > 0) { ctx.fillStyle = `rgba(0, 255, 255, ${p.life})`; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill(); } 
-                    else { particles.splice(i, 1); }
-                }
-
-                ctx.save(); ctx.translate(heroX - 40, heroY + 10); ctx.rotate(-Math.PI/4 + swordSwing);
-                ctx.fillStyle = '#0ff'; ctx.shadowBlur = 20; ctx.shadowColor = '#0ff'; ctx.fillRect(-5, -100, 10, 100);
-                ctx.fillStyle = '#555'; ctx.shadowBlur = 0; ctx.fillRect(-7, 0, 14, 20); ctx.restore();
-            }
-            requestAnimationFrame(animate);
-        }
-        initEpicBattle();
-
-        // ==========================================
-        // 2. ЛОГИКА МЕССЕНДЖЕРА И НОВЫХ ФУНКЦИЙ
-        // ==========================================
-        let userProfile = JSON.parse(localStorage.getItem('chipmunk_user')) || null;
-        let chatHistories = JSON.parse(localStorage.getItem('chipmunk_histories')) || {}; 
+        let userProfile = JSON.parse(localStorage.getItem('chipmunk_neon_user')) || null;
+        let chatHistories = JSON.parse(localStorage.getItem('chipmunk_neon_histories')) || {}; 
         let peer = null, dataConnection = null, mediaConnection = null, localStream = null;
         let incomingCallRef = null, currentCallType = null, currentChatFriendId = null, currentProfileId = null;
         let micEnabled = true, videoEnabled = true;
@@ -319,10 +332,11 @@
         function showToast(msg, type='info') {
             const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg;
             t.classList.remove('opacity-0', 'translate-y-[-20px]'); 
-            if(type === 'error') t.classList.replace('bg-chipmunk-dark', 'bg-red-600'); else t.classList.replace('bg-red-600', 'bg-chipmunk-dark');
+            if(type === 'error') { t.style.background = 'rgba(220, 38, 38, 0.9)'; document.getElementById('toast-icon').className = 'fas fa-exclamation-triangle mr-3 text-white'; }
+            else { t.style.background = 'rgba(255, 255, 255, 0.1)'; document.getElementById('toast-icon').className = 'fas fa-bell mr-3 text-neon-cyan'; }
             setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
         }
-        function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-1"></span> <span class="${c}">${t}</span>`; }
+        function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-2 shadow-[0_0_8px_${c==='text-neon-cyan'?'#00f3ff':'#ff0000'}]"></span> ${t}`; }
         function requestNotificationPermission() { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); }
         function playMessageSound() { try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){} }
         
@@ -336,9 +350,9 @@
             userProfile = { username: u, avatar: '🐿️', friends: [] }; saveProfile(); checkAuth();
         }
 
-        function logout() { if (peer) peer.destroy(); localStorage.removeItem('chipmunk_user'); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
-        function saveProfile() { localStorage.setItem('chipmunk_user', JSON.stringify(userProfile)); }
-        function saveHistories() { localStorage.setItem('chipmunk_histories', JSON.stringify(chatHistories)); }
+        function logout() { if (peer) peer.destroy(); localStorage.removeItem('chipmunk_neon_user'); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
+        function saveProfile() { localStorage.setItem('chipmunk_neon_user', JSON.stringify(userProfile)); }
+        function saveHistories() { localStorage.setItem('chipmunk_neon_histories', JSON.stringify(chatHistories)); }
         function formatAvatarHTML(d) { return d.startsWith('data:image') ? `<img src="${d}" class="avatar-img">` : d; }
 
         function applyProfile() {
@@ -351,7 +365,7 @@
         function setAvatar(data) { userProfile.avatar = data; saveProfile(); applyProfile(); showToast('Аватар обновлен'); if(dataConnection && dataConnection.open) dataConnection.send({type:'system_sync', name:userProfile.username, avatar:data}); }
         function uploadAvatar(e) {
             const f = e.target.files[0]; if(!f) return; const r = new FileReader();
-            r.onload = e => { const img = new Image(); img.onload = () => { const cvs = document.createElement('canvas'); const cx = cvs.getContext('2d'); cvs.width = 200; cvs.height = 200; cx.drawImage(img, 0, 0, 200, 200); setAvatar(cvs.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; r.readAsDataURL(f);
+            r.onload = e => { const img = new Image(); img.onload = () => { const cvs = document.createElement('canvas'); const cx = cvs.getContext('2d'); cvs.width = 300; cvs.height = 300; cx.drawImage(img, 0, 0, 300, 300); setAvatar(cvs.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; r.readAsDataURL(f);
             e.target.value = '';
         }
 
@@ -363,9 +377,9 @@
             document.getElementById('friend-profile-id').innerText = f.id; document.getElementById('friend-profile-modal').classList.remove('hidden');
         }
         function closeFriendProfile() { document.getElementById('friend-profile-modal').classList.add('hidden'); }
-        function copyFriendId() { navigator.clipboard.writeText(currentChatFriendId); showToast('ID скопирован!'); }
+        function copyFriendId() { navigator.clipboard.writeText(currentChatFriendId||document.getElementById('my-id').value); showToast('ID скопирован!'); }
+        function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showToast('Ваш ID скопирован!'); }
 
-        // --- УЛУЧШЕННАЯ СИНХРОНИЗАЦИЯ КОНТАКТОВ С УДАЛЕНИЕМ ---
         function addOrUpdateFriend(id, name, avatar) {
             if (id === document.getElementById('my-id').value) return; let f = userProfile.friends.find(f => f.id === id);
             if (f) { f.name = name; f.avatar = avatar; } else { userProfile.friends.push({ id, name, avatar }); } saveProfile(); renderFriendsList();
@@ -373,12 +387,12 @@
 
         function addFriendManual() {
             const id = document.getElementById('new-friend-id').value.trim(); if (!id) return;
-            addOrUpdateFriend(id, 'Ожидание...', '👤'); document.getElementById('new-friend-id').value = ''; openChatWithId(id);
+            addOrUpdateFriend(id, 'Неизвестный', '👤'); document.getElementById('new-friend-id').value = ''; openChatWithId(id);
         }
 
         function deleteContact(e, id) {
             e.stopPropagation();
-            if(confirm('Удалить контакт и всю переписку?')) {
+            if(confirm('Стереть контакт из базы?')) {
                 userProfile.friends = userProfile.friends.filter(f => f.id !== id);
                 delete chatHistories[id]; saveProfile(); saveHistories(); renderFriendsList();
                 if(currentChatFriendId === id) closeChat();
@@ -387,34 +401,44 @@
 
         function renderFriendsList() {
             const list = document.getElementById('friends-list'); list.innerHTML = '';
-            if (userProfile.friends.length === 0) { list.innerHTML = '<p class="text-sm text-stone-400 text-center py-4">Книжка пуста.</p>'; return; }
+            if (userProfile.friends.length === 0) { list.innerHTML = '<p class="text-xs text-stone-500 text-center py-8 font-bold uppercase tracking-widest border border-dashed border-white/10 rounded-2xl">Пусто. Ждем связи.</p>'; return; }
             userProfile.friends.forEach(f => {
                 const btn = document.createElement('div');
-                btn.className = 'glass-input rounded-3xl p-3 flex items-center justify-between mb-2 cursor-pointer transition hover:bg-stone-800 active:scale-95'; 
+                btn.className = 'glass-input rounded-2xl p-3 flex items-center justify-between mb-3 cursor-pointer transition hover:bg-white/10 active:scale-95 group border border-white/5'; 
                 btn.innerHTML = `
                     <div class="flex items-center w-full overflow-hidden" onclick="openChatWithId('${f.id}')">
-                        <div class="w-12 h-12 rounded-full bg-stone-700 flex items-center justify-center mr-3 text-2xl overflow-hidden border border-white/20 shadow-inner">${formatAvatarHTML(f.avatar)}</div>
+                        <div class="w-14 h-14 rounded-full bg-stone-800 flex items-center justify-center mr-4 text-2xl overflow-hidden border-2 border-white/10 shadow-lg group-hover:border-neon-cyan transition">${formatAvatarHTML(f.avatar)}</div>
                         <div class="text-left w-full overflow-hidden">
-                            <div class="font-bold text-white text-base truncate">${f.name}</div>
-                            <div class="text-xs text-chipmunk font-mono truncate mt-0.5">${f.id.substring(0,10)}...</div>
+                            <div class="font-black text-white text-lg truncate group-hover:text-neon-cyan transition tracking-wide">${f.name}</div>
+                            <div class="text-[10px] text-stone-500 font-mono truncate mt-1 tracking-widest">${f.id.substring(0,12)}...</div>
                         </div>
                     </div>
-                    <button onclick="deleteContact(event, '${f.id}')" class="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition flex items-center justify-center flex-shrink-0 ml-2" title="Удалить контакт"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="deleteContact(event, '${f.id}')" class="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition flex items-center justify-center flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100"><i class="fas fa-trash-alt"></i></button>
                 `;
                 list.appendChild(btn);
             });
         }
 
         function loadHistoryUI(id) {
-            const div = document.getElementById('chat-history'); div.innerHTML = '';
+            const div = document.getElementById('chat-history'); 
+            div.innerHTML = '<div class="flex flex-col items-center justify-center my-4"><span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,243,255,0.2)]">P2P Канал Защищен 🔒</span></div>';
             if (chatHistories[id]) chatHistories[id].forEach(m => renderMessageUI(m.text, m.sender, new Date(m.timestamp), m.file));
         }
 
-        // --- ИНИЦИАЛИЗАЦИЯ СЕТИ ---
         function initPeer() {
-            peer = new Peer({ debug: 2, pingInterval: 10000 });
-            peer.on('open', (id) => { document.getElementById('my-id').value = id; setStatus('В сети', 'text-green-400'); });
-            peer.on('disconnected', () => { setStatus('Потеря сети...', 'text-yellow-400'); if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000); });
+            peer = new Peer({ 
+                debug: 2, 
+                pingInterval: 10000,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun.cloudflare.com:3478' },
+                        { urls: 'stun:global.stun.twilio.com:3478' }
+                    ]
+                }
+            });
+            peer.on('open', (id) => { document.getElementById('my-id').value = id; setStatus('Online', 'text-neon-cyan'); });
+            peer.on('disconnected', () => { setStatus('Offline', 'text-red-500'); if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000); });
             
             peer.on('connection', (incomingConn) => {
                 incomingConn.on('open', () => { incomingConn.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar }); });
@@ -444,17 +468,16 @@
             });
         }
 
-        // --- АКТИВНЫЙ ЧАТ ---
         function openChatWithId(id) {
             currentChatFriendId = id; const f = userProfile.friends.find(f => f.id === id);
             document.getElementById('chat-header-name').innerText = f ? f.name : 'Подключение...'; 
             document.getElementById('chat-header-avatar').innerHTML = formatAvatarHTML(f ? f.avatar : '👤');
             loadHistoryUI(id); ui.viewContacts.classList.add('hidden'); ui.viewChat.classList.remove('hidden');
-            setStatus(`Соединение...`, 'text-yellow-400');
+            setStatus(`SYNC...`, 'text-yellow-400');
             
             if (dataConnection) dataConnection.close(); dataConnection = peer.connect(id); 
             dataConnection.on('open', () => {
-                setStatus('Чат активен', 'text-chipmunk-light'); 
+                setStatus('Online', 'text-neon-cyan'); 
                 dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar });
             });
             
@@ -473,16 +496,15 @@
                     playMessageSound(); 
                 }
             });
-            dataConnection.on('error', () => { showToast('Сбой сети', 'error'); setStatus('В сети', 'text-green-400'); });
+            dataConnection.on('error', () => { showToast('Сбой', 'error'); setStatus('Online', 'text-neon-cyan'); });
         }
 
         function closeChat() { 
             if (dataConnection) { dataConnection.close(); dataConnection = null; } 
             currentChatFriendId = null; 
-            ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('В сети', 'text-green-400'); 
+            ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); 
         }
 
-        // --- ОТПРАВКА ТЕКСТА И ФАЙЛОВ ---
         function sendMessage(e) {
             e.preventDefault(); const txt = document.getElementById('chat-input').value.trim(); if (!txt || !dataConnection || !dataConnection.open) return;
             dataConnection.send({ type: 'text', text: txt, senderName: userProfile.username });
@@ -493,8 +515,7 @@
 
         function sendFile(e) {
             const file = e.target.files[0]; if(!file) return; 
-            if(file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой! Максимум 5 МБ.', 'error'); return; }
-            
+            if(file.size > 5 * 1024 * 1024) { showToast('Максимум 5 МБ.', 'error'); return; }
             const reader = new FileReader();
             reader.onload = ev => { 
                 const fileObj = { fileName: file.name, fileType: file.type, data: ev.target.result };
@@ -503,48 +524,45 @@
                     if (!chatHistories[currentChatFriendId]) chatHistories[currentChatFriendId] = [];
                     chatHistories[currentChatFriendId].push({ text: `📁 ${file.name}`, sender: 'me', timestamp: Date.now(), file: fileObj }); 
                     saveHistories(); renderMessageUI(`📁 ${file.name}`, 'me', new Date(), fileObj);
-                } else { showToast('Нет активного чата для отправки', 'error'); }
+                } else { showToast('Собеседник оффлайн', 'error'); }
             }; 
-            reader.readAsDataURL(file);
-            e.target.value = ''; // Очистка
+            reader.readAsDataURL(file); e.target.value = '';
         }
 
         function renderMessageUI(txt, s, d, fileObj = null) {
-            const isMe = s === 'me'; const div = document.createElement('div'); div.className = `flex w-full mb-3 ${isMe ? 'justify-end' : 'justify-start'} animate-screen`;
+            const isMe = s === 'me'; const div = document.createElement('div'); div.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'} animate-pop`;
             
             let contentHtml = txt;
             if (fileObj) {
                 if (fileObj.fileType.startsWith('image/')) {
-                    contentHtml = `<img src="${fileObj.data}" class="max-w-full rounded-xl mb-1 cursor-pointer hover:opacity-80 transition border border-white/10" onclick="window.open('${fileObj.data}', '_blank')"><p class="text-[10px] truncate w-32 sm:w-48">${fileObj.fileName}</p>`;
+                    contentHtml = `<img src="${fileObj.data}" class="max-w-full rounded-xl mb-2 cursor-pointer hover:opacity-80 border border-white/10 shadow-lg" onclick="window.open('${fileObj.data}', '_blank')"><p class="text-[10px] truncate w-32 sm:w-48 font-mono">${fileObj.fileName}</p>`;
                 } else {
-                    contentHtml = `<a href="${fileObj.data}" download="${fileObj.fileName}" class="flex items-center space-x-3 bg-black/40 p-3 rounded-xl hover:bg-black/60 transition"><i class="fas fa-file-download text-xl text-chipmunk"></i><span class="truncate w-32 sm:w-48 text-sm">${fileObj.fileName}</span></a>`;
+                    contentHtml = `<a href="${fileObj.data}" download="${fileObj.fileName}" class="flex items-center space-x-3 bg-black/40 p-4 rounded-xl hover:bg-black/60 transition border border-white/5"><i class="fas fa-file-download text-2xl text-neon-cyan"></i><span class="truncate w-32 sm:w-48 text-sm font-bold">${fileObj.fileName}</span></a>`;
                 }
             }
 
-            div.innerHTML = `<div class="max-w-[85%] rounded-3xl px-5 py-3 text-sm shadow-md font-medium border border-white/10 ${isMe ? 'bg-gradient-to-br from-chipmunk to-orange-600 text-white rounded-tr-sm' : 'glass-input text-white rounded-tl-sm'}">${contentHtml}<div class="text-[10px] mt-1.5 opacity-70 ${isMe ? 'text-right text-orange-200' : 'text-left text-stone-400'}">${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}</div></div>`;
+            div.innerHTML = `<div class="max-w-[85%] px-5 py-3 text-sm font-medium ${isMe ? 'msg-me' : 'msg-them'}">${contentHtml}<div class="text-[9px] mt-2 font-mono font-bold tracking-widest opacity-60 ${isMe ? 'text-right text-white' : 'text-left text-neon-cyan'}">${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}</div></div>`;
             document.getElementById('chat-history').appendChild(div); document.getElementById('chat-history').scrollTop = document.getElementById('chat-history').scrollHeight;
         }
 
-        // --- УПРАВЛЕНИЕ ЗВОНКАМИ И PiP ---
         async function getMediaAccess(type) {
-            try { if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' ? { facingMode: "user" } : false }); document.getElementById('local-video').srcObject = localStream; return true; } catch (err) { showToast('Разрешите камеру/микрофон!', 'error'); return false; }
+            try { if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; } localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' ? { facingMode: "user" } : false }); document.getElementById('local-video').srcObject = localStream; return true; } catch (err) { showToast('Камера заблокирована', 'error'); return false; }
         }
 
         function setCallUI(type) {
-            const isA = type === 'audio'; document.getElementById('call-type-badge').innerText = isA ? 'Аудиозвонок' : 'Видеозвонок';
+            const isA = type === 'audio'; document.getElementById('call-type-badge').innerText = isA ? 'AUDIO' : 'VIDEO';
             document.getElementById('audio-only-remote').classList.toggle('hidden', !isA); document.getElementById('remote-video').classList.toggle('hidden', isA);
             document.getElementById('local-video-wrapper').classList.toggle('hidden', isA); document.getElementById('btn-video').classList.toggle('hidden', isA);
             
-            // Сброс классов сворачивания при новом звонке
             const overlay = document.getElementById('video-overlay'); const content = document.getElementById('call-content');
             overlay.className = 'ui-layer fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 flex items-center justify-center sm:justify-end bg-black/90 sm:bg-transparent pointer-events-none transition-all duration-300';
-            content.className = 'glass-panel p-3 rounded-3xl flex flex-col w-full max-w-sm sm:w-72 border border-white/20 pointer-events-auto transition-all duration-300 shadow-2xl relative';
-            document.getElementById('minimize-icon').className = 'fas fa-compress-alt text-[10px]';
+            content.className = 'glass-panel p-4 rounded-[2rem] flex flex-col w-full max-w-sm sm:w-80 border border-white/10 pointer-events-auto transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative';
+            document.getElementById('minimize-icon').className = 'fas fa-compress-alt text-xs';
 
             document.getElementById('video-overlay').classList.remove('hidden'); document.getElementById('remote-video-loader').classList.remove('hidden');
         }
 
-        async function startCall(type) { if (!dataConnection || !dataConnection.open) return showToast('Откройте чат с другом', 'error'); if (!(await getMediaAccess(type))) return; currentCallType = type; setCallUI(type); setupMediaConnection(peer.call(dataConnection.peer, localStream, { metadata: { type: type } })); }
+        async function startCall(type) { if (!dataConnection || !dataConnection.open) return showToast('Соединение не готово', 'error'); if (!(await getMediaAccess(type))) return; currentCallType = type; setCallUI(type); setupMediaConnection(peer.call(dataConnection.peer, localStream, { metadata: { type: type } })); }
         async function answerCall() { ringtoneAudio.pause(); document.getElementById('incoming-call-modal').classList.add('hidden'); if (!(await getMediaAccess(currentCallType))) { if (incomingCallRef) incomingCallRef.close(); return; } if (incomingCallRef) { currentChatFriendId = incomingCallRef.peer; setCallUI(currentCallType); incomingCallRef.answer(localStream); setupMediaConnection(incomingCallRef); incomingCallRef = null; } }
         function rejectCall() { ringtoneAudio.pause(); document.getElementById('incoming-call-modal').classList.add('hidden'); if (incomingCallRef) { incomingCallRef.close(); incomingCallRef = null; } }
 
@@ -556,30 +574,25 @@
         }
         function endCall() { if (mediaConnection) mediaConnection.close(); endCallLocally(); }
 
-        // --- ФУНКЦИИ СВОРАЧИВАНИЯ (PiP) ---
         function toggleMinimizeCall() {
             const overlay = document.getElementById('video-overlay'); const content = document.getElementById('call-content'); const icon = document.getElementById('minimize-icon');
             if (overlay.classList.contains('minimized-call')) {
-                overlay.classList.remove('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-48');
+                overlay.classList.remove('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-56');
                 overlay.classList.add('inset-0', 'sm:inset-auto', 'sm:top-4', 'sm:right-4', 'p-4', 'bg-black/90', 'sm:bg-transparent');
-                content.classList.add('w-full', 'max-w-sm', 'sm:w-72'); icon.className = 'fas fa-compress-alt text-[10px]';
+                content.classList.add('w-full', 'max-w-sm', 'sm:w-80'); icon.className = 'fas fa-compress-alt text-xs';
             } else {
-                overlay.classList.add('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-48');
+                overlay.classList.add('minimized-call', 'top-auto', 'left-auto', 'bottom-4', 'right-4', 'p-0', 'w-56');
                 overlay.classList.remove('inset-0', 'sm:inset-auto', 'sm:top-4', 'sm:right-4', 'p-4', 'bg-black/90', 'sm:bg-transparent');
-                content.classList.remove('w-full', 'max-w-sm', 'sm:w-72'); icon.className = 'fas fa-expand-alt text-[10px]';
+                content.classList.remove('w-full', 'max-w-sm', 'sm:w-80'); icon.className = 'fas fa-expand-alt text-xs';
             }
         }
+        async function toggleNativePiP() { const v = document.getElementById('remote-video'); if (document.pictureInPictureElement) { await document.exitPictureInPicture(); } else if (document.pictureInPictureEnabled && !v.hidden) { await v.requestPictureInPicture(); } else { showToast('Видео не активно', 'error'); } }
 
-        async function toggleNativePiP() {
-            const video = document.getElementById('remote-video');
-            if (document.pictureInPictureElement) { await document.exitPictureInPicture(); } 
-            else if (document.pictureInPictureEnabled && !video.hidden) { await video.requestPictureInPicture(); } 
-            else { showToast('Сначала включите видео', 'error'); }
-        }
+        function toggleMic() { if(!localStream) return; micEnabled = !micEnabled; localStream.getAudioTracks().forEach(t => t.enabled = micEnabled); document.getElementById('btn-mic').className = `flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl transition active:scale-95 ${micEnabled ? 'text-white' : 'text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`; }
+        function toggleVideo() { if(!localStream || currentCallType === 'audio') return; videoEnabled = !videoEnabled; localStream.getVideoTracks().forEach(t => t.enabled = videoEnabled); document.getElementById('btn-video').className = `flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl transition active:scale-95 ${videoEnabled ? 'text-white' : 'text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`; }
 
-        function toggleMic() { if(!localStream) return; micEnabled = !micEnabled; localStream.getAudioTracks().forEach(t => t.enabled = micEnabled); document.getElementById('btn-mic').className = `flex-1 glass-input p-3 rounded-xl text-lg transition hover:bg-stone-700 ${micEnabled ? 'text-white' : 'text-red-500'}`; }
-        function toggleVideo() { if(!localStream || currentCallType === 'audio') return; videoEnabled = !videoEnabled; localStream.getVideoTracks().forEach(t => t.enabled = videoEnabled); document.getElementById('btn-video').className = `flex-1 glass-input p-3 rounded-xl text-lg transition hover:bg-stone-700 ${videoEnabled ? 'text-white' : 'text-red-500'}`; }
-        function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showToast('ID скопирован!'); }
+        ui.chatInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+        ui.chatInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); } });
         
         window.addEventListener('DOMContentLoaded', checkAuth);
     </script>
