@@ -119,9 +119,10 @@
                 <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-neon-purple rounded-full filter blur-[50px] opacity-20 group-hover:opacity-40 transition"></div>
                     <h2 class="text-xs font-black mb-3 text-stone-400 uppercase tracking-widest"><i class="fas fa-fingerprint mr-2 text-neon-cyan"></i>Твой 6-значный код</h2>
-                    <div class="flex items-center space-x-3 relative z-10">
-                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-2xl text-center w-full transition text-neon-cyan font-bold tracking-[0.3em]">
-                        <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white p-4 rounded-2xl active:scale-90 transition text-xl"><i class="fas fa-clone"></i></button>
+                    <div class="flex items-center space-x-2 relative z-10">
+                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-3 py-4 font-mono text-xl sm:text-2xl text-center w-full transition text-neon-cyan font-bold tracking-[0.2em] sm:tracking-[0.3em]">
+                        <button onclick="refreshMyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white w-14 h-14 rounded-2xl active:scale-90 transition text-xl flex items-center justify-center flex-shrink-0" title="Сгенерировать новый ID"><i class="fas fa-sync-alt"></i></button>
+                        <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white w-14 h-14 rounded-2xl active:scale-90 transition text-xl flex items-center justify-center flex-shrink-0" title="Копировать"><i class="fas fa-clone"></i></button>
                     </div>
                 </div>
 
@@ -162,7 +163,7 @@
                 </div>
 
                 <div class="glass-panel rounded-b-[2rem] p-3 sm:p-4 flex-shrink-0 z-30">
-                    <form onsubmit="sendMessage(event)" class="flex items-end space-x-3 max-w-4xl mx-auto">
+                    <form id="chat-form" onsubmit="sendMessage(event)" class="flex items-end space-x-3 max-w-4xl mx-auto">
                         <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl">
                             <i class="fas fa-plus"></i>
                         </button>
@@ -337,7 +338,7 @@
         function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
         function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) {} }
 
-        // Генерация простого 6-значного кода!
+        // Генерация простого 6-значного кода
         function generateCode() {
             return Math.floor(100000 + Math.random() * 900000).toString();
         }
@@ -346,7 +347,6 @@
             const savedUser = safeGetItem('chipmunk_stable_user');
             if (savedUser) {
                 userProfile = JSON.parse(savedUser);
-                // Проверяем, если ID старый (не 6 цифр), то пересоздаем его!
                 if (!userProfile.peerId || userProfile.peerId.length !== 6) {
                     userProfile.peerId = generateCode();
                     safeSetItem('chipmunk_stable_user', JSON.stringify(userProfile));
@@ -360,7 +360,7 @@
         let micEnabled = true, videoEnabled = true;
         const ringtoneAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3'); ringtoneAudio.loop = true;
 
-        const ui = { auth: document.getElementById('screen-auth'), app: document.getElementById('screen-app'), viewContacts: document.getElementById('view-contacts'), viewChat: document.getElementById('view-chat'), status: document.getElementById('connection-status'), chatInput: document.getElementById('chat-input') };
+        const ui = { auth: document.getElementById('screen-auth'), app: document.getElementById('screen-app'), viewContacts: document.getElementById('view-contacts'), viewChat: document.getElementById('view-chat'), status: document.getElementById('connection-status') };
 
         function showToast(msg, type='info') {
             const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', 'translate-y-[-20px]'); 
@@ -434,6 +434,19 @@
             try { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); } catch(e) {}
         }
 
+        // РУЧНОЕ ОБНОВЛЕНИЕ ID (ДЛЯ СБРОСА ЗАВИСШИХ СОЕДИНЕНИЙ)
+        function refreshMyId() {
+            if (confirm('Сгенерировать новый 6-значный код? Текущие собеседники потеряют связь с вами.')) {
+                userProfile.peerId = generateCode();
+                saveProfile();
+                if (peer) {
+                    peer.destroy();
+                    peer = null;
+                }
+                setTimeout(initPeer, 500); // Даем время на удаление старого подключения
+            }
+        }
+
         function addOrUpdateFriend(id, name, avatar) {
             if (id === document.getElementById('my-id').value) return; let f = userProfile.friends.find(f => f.id === id);
             if (f) { f.name = name; f.avatar = avatar; } else { userProfile.friends.push({ id, name, avatar }); } saveProfile(); renderFriendsList();
@@ -476,48 +489,52 @@
             
             let myId = userProfile.peerId;
             document.getElementById('my-id').value = myId;
-            setStatus('Подключение...', 'text-yellow-400');
+            setStatus('Подключение к серверу...', 'text-yellow-400');
 
             try {
-                // Стандартное и самое надежное подключение с TURN серверами
+                // Инициализация пира (Явно прописываем публичный облачный сервер PeerJS)
                 peer = new Peer(myId, { 
+                    host: '0.peerjs.com',
+                    port: 443,
+                    secure: true,
                     debug: 2, 
                     pingInterval: 10000,
                     config: { 
                         iceServers: [
                             { urls: 'stun:stun.l.google.com:19302' }, 
-                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:global.stun.twilio.com:3478' },
                             { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
                             { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
                             { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
                         ] 
                     }
                 });
-            } catch(e) { showToast('Сбой сети', 'error'); return; }
+            } catch(e) { showToast('Сбой создания сети', 'error'); return; }
             
             peer.on('open', (id) => { 
                 document.getElementById('my-id').value = id; 
-                setStatus('Online', 'text-neon-cyan'); 
+                setStatus('В сети (Сервер ОК)', 'text-neon-cyan'); 
             });
             
             peer.on('disconnected', () => { 
-                setStatus('Сбой сети...', 'text-red-500'); 
-                if (!peer.destroyed) setTimeout(() => { setStatus('Подключение...', 'text-yellow-400'); peer.reconnect(); }, 2000); 
+                setStatus('Потеря связи с сервером', 'text-red-500'); 
+                if (!peer.destroyed) setTimeout(() => { setStatus('Переподключение...', 'text-yellow-400'); peer.reconnect(); }, 3000); 
             });
             
             peer.on('error', (err) => {
                 console.error("Peer error:", err);
                 if (err.type === 'peer-unavailable') {
-                    showToast('Собеседник оффлайн', 'error');
-                    setStatus('Online', 'text-neon-cyan');
-                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'browser-incompatible') {
-                    setStatus('Ошибка сервера', 'text-red-500');
+                    showToast('Собеседник оффлайн или не существует', 'error');
+                    setStatus('В сети (Сервер ОК)', 'text-neon-cyan');
+                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'browser-incompatible' || err.type === 'webrtc') {
+                    setStatus('Сбой сети: ' + err.type, 'text-red-500');
+                    showToast('Сбой соединения. Нажмите кнопку обновления ID.', 'error');
                 } else if (err.type === 'unavailable-id') {
-                    // Если наш случайный 6-значный код вдруг занят кем-то другим в мире - создаем новый!
+                    // ID занят (коллизия 6 цифр). Создаем новый.
                     userProfile.peerId = generateCode();
                     saveProfile();
-                    peer.destroy();
-                    initPeer();
+                    if (peer) peer.destroy();
+                    setTimeout(initPeer, 1000);
                 }
             });
             
@@ -554,11 +571,11 @@
             document.getElementById('chat-header-name').innerText = f ? f.name : 'Подключение...'; 
             document.getElementById('chat-header-avatar').innerHTML = formatAvatarHTML(f ? f.avatar : '👤');
             loadHistoryUI(id); ui.viewContacts.classList.add('hidden'); ui.viewChat.classList.remove('hidden');
-            setStatus(`SYNC...`, 'text-yellow-400');
+            setStatus(`Связь с пиром...`, 'text-yellow-400');
             
             if (dataConnection) dataConnection.close(); dataConnection = peer.connect(id); 
             dataConnection.on('open', () => {
-                setStatus('Online', 'text-neon-cyan'); dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar });
+                setStatus('В сети (Сервер ОК)', 'text-neon-cyan'); dataConnection.send({ type: 'system_sync', name: userProfile.username, avatar: userProfile.avatar });
             });
             dataConnection.on('data', (d) => {
                 if (d.type === 'system_sync') { 
@@ -573,20 +590,22 @@
                     else showToast(`Сообщение от ${d.senderName || 'друга'}`); playMessageSound(); 
                 }
             });
-            dataConnection.on('error', () => { showToast('Сбой', 'error'); setStatus('Online', 'text-neon-cyan'); });
+            dataConnection.on('error', () => { showToast('Сбой P2P', 'error'); setStatus('В сети (Сервер ОК)', 'text-neon-cyan'); });
         }
 
         function closeChat() { 
             if (dataConnection) { dataConnection.close(); dataConnection = null; } 
-            currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); 
+            currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('В сети (Сервер ОК)', 'text-neon-cyan'); 
         }
 
         function sendMessage(e) {
-            e.preventDefault(); const txt = document.getElementById('chat-input').value.trim(); if (!txt || !dataConnection || !dataConnection.open) return;
+            e.preventDefault(); const chatInput = document.getElementById('chat-input');
+            const txt = chatInput ? chatInput.value.trim() : ''; 
+            if (!txt || !dataConnection || !dataConnection.open) return;
             dataConnection.send({ type: 'text', text: txt, senderName: userProfile.username });
             if (!chatHistories[currentChatFriendId]) chatHistories[currentChatFriendId] = [];
             chatHistories[currentChatFriendId].push({ text: txt, sender: 'me', timestamp: Date.now() }); saveHistories(); renderMessageUI(txt, 'me', new Date());
-            document.getElementById('chat-input').value = '';
+            if (chatInput) { chatInput.value = ''; chatInput.style.height = 'auto'; }
         }
 
         function sendFile(e) {
@@ -672,12 +691,15 @@
         function toggleMic() { if(!localStream) return; micEnabled = !micEnabled; localStream.getAudioTracks().forEach(t => t.enabled = micEnabled); document.getElementById('btn-mic').className = `flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl transition active:scale-95 ${micEnabled ? 'text-white' : 'text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`; }
         function toggleVideo() { if(!localStream || currentCallType === 'audio') return; videoEnabled = !videoEnabled; localStream.getVideoTracks().forEach(t => t.enabled = videoEnabled); document.getElementById('btn-video').className = `flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl transition active:scale-95 ${videoEnabled ? 'text-white' : 'text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]'}`; }
 
-        if (ui.chatInput) {
-            ui.chatInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
-            ui.chatInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); } });
-        }
-        
-        checkAuth();
+        // Безопасная инициализация UI событий
+        window.addEventListener('DOMContentLoaded', () => {
+            const chatInputEl = document.getElementById('chat-input');
+            if (chatInputEl) {
+                chatInputEl.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+                chatInputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('chat-form').dispatchEvent(new Event('submit')); } });
+            }
+            checkAuth();
+        });
     </script>
 </body>
 </html>
