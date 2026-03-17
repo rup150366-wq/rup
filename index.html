@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chipmunk Neon</title>
+    <title>Chipmunk Neon (Stable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -32,24 +32,23 @@
         }
         @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
 
-        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: floatOrb 10s infinite alternate ease-in-out; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; animation: floatOrb 10s infinite alternate ease-in-out; pointer-events: none; }
         .orb-1 { width: 300px; height: 300px; background: #ff00aa; top: -50px; left: -50px; animation-delay: 0s; }
         .orb-2 { width: 400px; height: 400px; background: #00f3ff; bottom: -100px; right: -100px; animation-delay: -3s; }
         .orb-3 { width: 250px; height: 250px; background: #ff5500; top: 40%; left: 40%; animation-delay: -7s; }
         @keyframes floatOrb { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.2); } }
 
-        .glass-panel { background: rgba(15, 15, 20, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); }
-        .glass-input { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: all 0.3s ease; }
-        .glass-input:focus { border-color: #ff5500; box-shadow: 0 0 15px rgba(255, 85, 0, 0.4); background: rgba(0, 0, 0, 0.6); outline: none; }
+        .glass-panel { background: rgba(15, 15, 20, 0.5); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); }
+        .glass-input { background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15); color: white; transition: all 0.3s ease; }
+        .glass-input:focus { border-color: #ff5500; background: rgba(0, 0, 0, 0.8); outline: none; }
+
         .msg-me { background: linear-gradient(135deg, #ff512f, #dd2476); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(221, 36, 118, 0.3); }
-        .msg-them { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); color: white; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+        .msg-them { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); color: white; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
 
         .avatar-img { object-fit: cover; width: 100%; height: 100%; border-radius: 50%; }
         
-        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(255,85,0,0.7); } 70% { box-shadow: 0 0 0 15px rgba(255,85,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); } }
-        .btn-glow { animation: pulseGlow 2s infinite; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.95) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-pop { animation: popIn 0.3s ease forwards; }
 
         #local-video { transform: scaleX(-1); }
         ::-webkit-scrollbar { width: 4px; }
@@ -59,34 +58,35 @@
 </head>
 <body class="h-[100dvh] flex flex-col">
 
+    <!-- ЖИВОЙ ФОН И ОПТИМИЗИРОВАННАЯ АНИМАЦИЯ CANVAS -->
     <div class="animated-bg"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
-    <canvas id="epic-battle-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.9; pointer-events: none;"></canvas>
+    <canvas id="epic-battle-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.8; pointer-events: none;"></canvas>
 
+    <!-- УВЕДОМЛЕНИЯ -->
     <div id="toast" class="ui-layer fixed top-6 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-white/20 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center font-bold">
         <i id="toast-icon" class="fas fa-bell mr-3 text-neon-cyan"></i>
         <span id="toast-msg" class="text-sm tracking-wide"></span>
     </div>
 
     <!-- АВТОРИЗАЦИЯ -->
-    <div id="screen-auth" class="ui-layer absolute inset-0 flex flex-col items-center justify-center p-4 z-40 bg-black/40 backdrop-blur-sm">
-        <div class="w-full max-w-sm space-y-8 text-center animate-pop glass-panel p-10 rounded-[2.5rem]">
-            <div class="relative w-36 h-36 mx-auto">
-                <div class="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-spin" style="animation-duration: 3s; filter: blur(15px); opacity: 0.7;"></div>
-                <div class="relative w-full h-full bg-black rounded-full flex items-center justify-center text-7xl border-2 border-white/20">🐿️</div>
-            </div>
+    <div id="screen-auth" class="ui-layer absolute inset-0 flex flex-col items-center justify-center p-4 z-40 bg-black/60 backdrop-blur-md">
+        <div class="w-full max-w-sm space-y-8 text-center animate-pop glass-panel p-8 sm:p-10 rounded-[2.5rem]">
+            <div class="w-32 h-32 bg-black rounded-full flex items-center justify-center mx-auto text-7xl border-[3px] border-orange-500 shadow-[0_0_20px_#ff5500]">🐿️</div>
+            
             <div>
-                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-blue-500 to-neon-purple tracking-tight mb-2">CHIPMUNK</h1>
-                <p class="text-stone-400 text-xs font-bold tracking-widest uppercase">Neon Edition</p>
+                <h1 class="text-4xl font-black text-white tracking-tight mb-2">CHIPMUNK</h1>
+                <p class="text-stone-400 text-xs font-bold tracking-widest uppercase">Secure P2P Connect</p>
             </div>
+            
             <form class="space-y-5" onsubmit="loginUser(event)">
                 <div class="text-left relative">
                     <i class="fas fa-user absolute left-5 top-1/2 transform -translate-y-1/2 text-stone-400"></i>
                     <input type="text" id="auth-username" required placeholder="Ваш Никнейм..." class="w-full glass-input rounded-2xl pl-12 pr-5 py-4 text-lg font-bold placeholder-stone-500">
                 </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-pink-600 text-white font-black py-4 rounded-2xl transition hover:scale-105 active:scale-95 text-lg btn-glow uppercase tracking-wider">
+                <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-pink-600 text-white font-black py-4 rounded-2xl transition hover:scale-105 active:scale-95 text-lg uppercase tracking-wider">
                     Ворваться в сеть <i class="fas fa-rocket ml-2"></i>
                 </button>
             </form>
@@ -95,40 +95,38 @@
 
     <!-- ГЛАВНЫЙ ИНТЕРФЕЙС -->
     <div id="screen-app" class="ui-layer hidden flex-1 flex flex-col h-full bg-transparent">
+        
         <header class="glass-panel p-3 sm:p-4 flex justify-between items-center z-20 flex-shrink-0 rounded-b-3xl mx-2 mt-2">
             <div class="flex items-center space-x-4">
-                <div class="relative cursor-pointer hover:scale-105 transition transform" onclick="openSettings()">
-                    <div class="absolute inset-0 bg-neon-cyan rounded-full animate-ping opacity-20"></div>
-                    <div id="my-avatar-display" class="relative w-14 h-14 bg-stone-800 rounded-full flex items-center justify-center text-3xl shadow-lg overflow-hidden border-2 border-neon-cyan">🐿️</div>
+                <div class="relative cursor-pointer transition transform active:scale-90" onclick="openSettings()">
+                    <div id="my-avatar-display" class="relative w-14 h-14 bg-stone-800 rounded-full flex items-center justify-center text-3xl overflow-hidden border-2 border-neon-cyan">🐿️</div>
                 </div>
                 <div class="overflow-hidden">
                     <h1 id="my-name-display" class="text-xl font-black text-white truncate tracking-wide">Имя</h1>
-                    <p id="connection-status" class="text-xs text-neon-cyan flex items-center font-bold tracking-widest uppercase mt-1">
-                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2 shadow-[0_0_8px_#eab308]"></span> Ожидание сети...
+                    <p id="connection-status" class="text-xs text-yellow-400 flex items-center font-bold tracking-widest uppercase mt-1">
+                        <span class="w-2 h-2 rounded-full bg-yellow-400 mr-2 animate-pulse"></span> Подключение...
                     </p>
                 </div>
             </div>
-            <button onclick="openSettings()" class="w-12 h-12 rounded-full glass-input flex items-center justify-center hover:bg-white/20 transition text-xl hover:rotate-90"><i class="fas fa-sliders-h"></i></button>
+            <button onclick="openSettings()" class="w-12 h-12 rounded-full glass-input flex items-center justify-center transition text-xl active:scale-90"><i class="fas fa-sliders-h"></i></button>
         </header>
 
         <main class="flex-1 relative flex overflow-hidden p-2">
-            <!-- КОНТАКТЫ -->
+            
             <div id="view-contacts" class="absolute inset-0 flex flex-col p-2 overflow-y-auto w-full max-w-md mx-auto animate-pop z-10">
-                <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-neon-purple rounded-full filter blur-[50px] opacity-20 transition"></div>
+                <div class="glass-panel rounded-3xl p-6 mb-4">
                     <h2 class="text-xs font-black mb-3 text-stone-400 uppercase tracking-widest"><i class="fas fa-fingerprint mr-2 text-neon-cyan"></i>Твой цифровой ID</h2>
-                    <div class="flex items-center space-x-3 relative z-10">
-                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider cursor-text">
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="my-id" readonly value="Генерация..." class="flex-1 glass-input rounded-2xl px-5 py-4 font-mono text-sm w-full transition text-neon-cyan font-bold tracking-wider">
                         <button onclick="copyId()" class="bg-white/10 hover:bg-white/20 border border-white/10 text-white p-4 rounded-2xl active:scale-90 transition text-xl"><i class="fas fa-clone"></i></button>
                     </div>
                 </div>
 
-                <div class="glass-panel rounded-3xl p-6 mb-4 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-32 h-32 bg-orange-500 rounded-full filter blur-[50px] opacity-20 transition"></div>
+                <div class="glass-panel rounded-3xl p-6 mb-4">
                     <h2 class="text-xs font-black mb-4 text-stone-400 uppercase tracking-widest"><i class="fas fa-radar mr-2 text-orange-500"></i>Радар (Поиск)</h2>
-                    <div class="space-y-3 relative z-10">
+                    <div class="space-y-3">
                         <input type="text" id="new-friend-id" placeholder="Введи ID друга..." class="w-full glass-input rounded-2xl px-5 py-4 font-mono text-sm transition">
-                        <button onclick="addFriendManual()" class="w-full bg-gradient-to-r from-neon-purple to-blue-600 text-white font-bold py-4 rounded-2xl transition text-sm flex items-center justify-center hover:scale-[1.02] active:scale-95 shadow-lg uppercase tracking-wider">
+                        <button onclick="addFriendManual()" class="w-full bg-gradient-to-r from-neon-purple to-blue-600 text-white font-bold py-4 rounded-2xl transition text-sm flex items-center justify-center active:scale-95 uppercase tracking-wider">
                             Установить связь <i class="fas fa-bolt ml-2"></i>
                         </button>
                     </div>
@@ -140,96 +138,97 @@
                 </div>
             </div>
 
-            <!-- ЧАТ -->
             <div id="view-chat" class="hidden absolute inset-0 flex flex-col z-20 w-full animate-pop px-2 pb-2">
-                <div class="glass-panel rounded-t-[2rem] p-3 sm:p-4 flex justify-between items-center shadow-2xl z-30 mb-2 mt-2">
+                <div class="glass-panel rounded-t-[2rem] p-3 sm:p-4 flex justify-between items-center z-30 mb-2 mt-2">
                     <div class="flex items-center">
-                        <button onclick="closeChat()" class="mr-4 w-12 h-12 rounded-full glass-input flex items-center justify-center active:scale-90 text-xl hover:bg-white/10 transition"><i class="fas fa-chevron-left"></i></button>
-                        <div id="chat-header-avatar" class="w-12 h-12 bg-stone-800 rounded-full flex items-center justify-center text-2xl mr-4 overflow-hidden border-2 border-white/20 cursor-pointer shadow-lg" onclick="openFriendProfile()">👤</div>
+                        <button onclick="closeChat()" class="mr-4 w-12 h-12 rounded-full glass-input flex items-center justify-center active:scale-90 text-xl"><i class="fas fa-chevron-left"></i></button>
+                        <div id="chat-header-avatar" class="w-12 h-12 bg-stone-800 rounded-full flex items-center justify-center text-2xl mr-4 overflow-hidden border-2 border-white/20 cursor-pointer" onclick="openFriendProfile()">👤</div>
                         <h2 id="chat-header-name" class="font-black text-lg sm:text-xl text-white truncate cursor-pointer hover:text-neon-cyan transition tracking-wide" onclick="openFriendProfile()">Собеседник</h2>
                     </div>
                     <div class="flex space-x-3">
-                        <button onclick="startCall('audio')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-green-500/40 border border-white/10 text-green-400 flex items-center justify-center active:scale-90 text-xl transition"><i class="fas fa-phone-alt"></i></button>
-                        <button onclick="startCall('video')" class="w-12 h-12 rounded-full bg-white/10 hover:bg-orange-500/40 border border-white/10 text-orange-400 flex items-center justify-center active:scale-90 text-xl transition"><i class="fas fa-video"></i></button>
+                        <button onclick="startCall('audio')" class="w-12 h-12 rounded-full bg-white/10 text-green-400 flex items-center justify-center active:scale-90 text-xl transition border border-white/10"><i class="fas fa-phone-alt"></i></button>
+                        <button onclick="startCall('video')" class="w-12 h-12 rounded-full bg-white/10 text-orange-400 flex items-center justify-center active:scale-90 text-xl transition border border-white/10"><i class="fas fa-video"></i></button>
                     </div>
                 </div>
 
                 <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 z-10 glass-panel rounded-[2rem] mb-2 flex flex-col">
                     <div class="flex flex-col items-center justify-center my-4">
-                        <span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,243,255,0.2)]">P2P Канал Защищен 🔒</span>
+                        <span class="bg-black/60 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase">P2P Канал Защищен 🔒</span>
                     </div>
                 </div>
 
                 <div class="glass-panel rounded-b-[2rem] p-3 sm:p-4 flex-shrink-0 z-30">
                     <form onsubmit="sendMessage(event)" class="flex items-end space-x-3 max-w-4xl mx-auto">
-                        <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input hover:bg-white/20 text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl"><i class="fas fa-plus"></i></button>
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="glass-input text-stone-300 rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 transition active:scale-90 text-xl">
+                            <i class="fas fa-plus"></i>
+                        </button>
                         <input type="file" id="file-input" class="hidden" onchange="sendFile(event)">
                         <textarea id="chat-input" rows="1" placeholder="Написать..." class="flex-1 glass-input rounded-[1.2rem] px-5 py-4 text-base outline-none resize-none max-h-32 min-h-[56px] font-medium"></textarea>
-                        <button type="submit" class="bg-gradient-to-tr from-neon-cyan to-blue-600 text-white rounded-[1.2rem] flex items-center justify-center w-14 h-14 shadow-[0_0_15px_rgba(0,243,255,0.4)] flex-shrink-0 active:scale-90 text-xl transition hover:scale-105"><i class="fas fa-paper-plane"></i></button>
+                        <button type="submit" class="bg-gradient-to-tr from-neon-cyan to-blue-600 text-white rounded-[1.2rem] flex items-center justify-center w-14 h-14 flex-shrink-0 active:scale-90 text-xl transition"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- МОДАЛКИ -->
-    <div id="friend-profile-modal" class="ui-layer hidden absolute inset-0 bg-black/60 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+    <!-- МОДАЛКИ (Профиль и Настройки) -->
+    <div id="friend-profile-modal" class="ui-layer hidden absolute inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4">
         <div class="glass-panel w-full max-w-sm rounded-[2.5rem] p-8 text-center relative animate-pop border-t border-white/20">
-            <button onclick="closeFriendProfile()" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 hover:bg-red-500 transition"><i class="fas fa-times"></i></button>
-            <div id="friend-profile-avatar" class="w-36 h-36 mx-auto rounded-full bg-stone-800 flex items-center justify-center text-7xl overflow-hidden border-[4px] border-neon-purple mb-6 text-white shadow-[0_0_30px_rgba(157,0,255,0.4)]">👤</div>
+            <button onclick="closeFriendProfile()" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition"><i class="fas fa-times"></i></button>
+            <div id="friend-profile-avatar" class="w-36 h-36 mx-auto rounded-full bg-stone-800 flex items-center justify-center text-7xl overflow-hidden border-[4px] border-neon-purple mb-6 text-white">👤</div>
             <h2 id="friend-profile-name" class="text-3xl font-black mb-2 truncate text-white tracking-wide">Имя</h2>
-            <div class="mt-4 flex items-center justify-center space-x-3 bg-black/40 py-3 px-5 rounded-2xl mx-auto cursor-pointer hover:bg-black/60 transition border border-white/5" onclick="copyFriendId()">
+            <div class="mt-4 flex items-center justify-center space-x-3 bg-black/40 py-3 px-5 rounded-2xl mx-auto cursor-pointer border border-white/5" onclick="copyFriendId()">
                 <p id="friend-profile-id" class="text-xs font-mono truncate max-w-[200px] text-neon-cyan font-bold">ID...</p>
                 <i class="fas fa-copy text-stone-400"></i>
             </div>
         </div>
     </div>
 
-    <div id="settings-modal" class="ui-layer hidden absolute inset-0 bg-black/60 backdrop-blur-xl flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+    <div id="settings-modal" class="ui-layer hidden absolute inset-0 bg-black/80 backdrop-blur-xl flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
         <div class="glass-panel w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 overflow-y-auto max-h-[90vh] animate-pop border-t border-white/20">
             <div class="flex justify-between items-start mb-6">
                 <div class="w-10"></div>
-                <div class="flex flex-col items-center text-center relative">
-                    <div class="absolute inset-0 bg-orange-500 rounded-full filter blur-[40px] opacity-40"></div>
-                    <div id="settings-avatar-big" class="relative w-40 h-40 bg-stone-800 rounded-full flex items-center justify-center text-7xl overflow-hidden mb-4 border-[4px] border-white shadow-2xl">🐿️</div>
+                <div class="flex flex-col items-center text-center">
+                    <div id="settings-avatar-big" class="relative w-40 h-40 bg-stone-800 rounded-full flex items-center justify-center text-7xl overflow-hidden mb-4 border-[4px] border-white shadow-lg">🐿️</div>
                     <h2 id="settings-name-big" class="text-3xl font-black text-white tracking-wide">Имя</h2>
                 </div>
-                <button onclick="closeSettings()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 text-lg hover:bg-red-500 transition"><i class="fas fa-times"></i></button>
+                <button onclick="closeSettings()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 text-lg transition"><i class="fas fa-times"></i></button>
             </div>
             
             <div class="space-y-4 mt-8">
                 <div class="glass-input p-5 rounded-3xl border border-white/5">
                     <label class="block text-[10px] font-black text-stone-400 uppercase mb-4 tracking-widest">Аватарка</label>
                     <div class="flex justify-between">
-                        <button onclick="setAvatar('🐿️')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 hover:bg-white/20 transition hover:scale-110">🐿️</button>
-                        <button onclick="setAvatar('🦊')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 hover:bg-white/20 transition hover:scale-110">🦊</button>
-                        <button onclick="setAvatar('👽')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 hover:bg-white/20 transition hover:scale-110">👽</button>
-                        <div class="relative w-14 h-14 transition hover:scale-110">
+                        <button onclick="setAvatar('🐿️')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 active:scale-90">🐿️</button>
+                        <button onclick="setAvatar('🦊')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 active:scale-90">🦊</button>
+                        <button onclick="setAvatar('👽')" class="w-14 h-14 text-3xl rounded-2xl bg-white/5 border border-white/10 active:scale-90">👽</button>
+                        <div class="relative w-14 h-14 active:scale-90">
                             <input type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadAvatar(event)">
-                            <div class="w-full h-full rounded-2xl bg-gradient-to-br from-neon-purple to-neon-cyan flex items-center justify-center text-white text-xl shadow-[0_0_15px_rgba(0,243,255,0.4)]"><i class="fas fa-image"></i></div>
+                            <div class="w-full h-full rounded-2xl bg-gradient-to-br from-neon-purple to-neon-cyan flex items-center justify-center text-white text-xl"><i class="fas fa-image"></i></div>
                         </div>
                     </div>
                 </div>
-                <button onclick="requestNotificationPermission()" class="w-full flex items-center justify-between p-5 glass-input rounded-3xl border border-white/5 hover:bg-white/10 transition active:scale-95">
+                <button onclick="requestNotificationPermission()" class="w-full flex items-center justify-between p-5 glass-input rounded-3xl border border-white/5 active:scale-95 transition">
                     <span class="text-sm font-bold text-white uppercase tracking-wider"><i class="fas fa-bell mr-3 text-neon-cyan"></i> Уведомления</span>
                     <i class="fas fa-chevron-right text-stone-500"></i>
                 </button>
-                <button onclick="logout()" class="w-full bg-red-500/20 text-red-400 hover:text-white hover:bg-red-600 font-bold py-5 rounded-3xl transition border border-red-500/30 text-sm uppercase tracking-widest mt-4">Выйти из системы</button>
+                <button onclick="logout()" class="w-full bg-red-500/20 text-red-400 font-bold py-5 rounded-3xl transition border border-red-500/30 text-sm uppercase tracking-widest mt-4 active:scale-95">Выйти из системы</button>
             </div>
         </div>
     </div>
 
-    <!-- ЗВОНОК -->
-    <div id="video-overlay" class="ui-layer hidden fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 flex items-center justify-center sm:justify-end bg-black/90 sm:bg-transparent pointer-events-none transition-all duration-300">
-        <div id="call-content" class="glass-panel p-4 rounded-[2rem] flex flex-col w-full max-w-sm sm:w-80 border border-white/10 pointer-events-auto transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative">
+    <!-- ЭКРАН ЗВОНКА -->
+    <div id="video-overlay" class="ui-layer hidden fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 p-4 z-50 flex items-center justify-center sm:justify-end bg-black/95 sm:bg-transparent pointer-events-none transition-all duration-300">
+        <div id="call-content" class="glass-panel p-4 rounded-[2rem] flex flex-col w-full max-w-sm sm:w-80 border border-white/10 pointer-events-auto transition-all duration-300 relative">
             <div class="absolute top-5 left-5 z-40"><span id="call-type-badge" class="bg-red-600 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest animate-pulse">Звонок</span></div>
             <div class="absolute top-4 right-4 z-40 flex space-x-2">
-                <button onclick="toggleNativePiP()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-neon-cyan transition active:scale-90"><i class="fas fa-external-link-alt text-xs"></i></button>
-                <button onclick="toggleMinimizeCall()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-neon-cyan transition active:scale-90"><i class="fas fa-compress-alt text-xs" id="minimize-icon"></i></button>
+                <button onclick="toggleNativePiP()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white active:scale-90"><i class="fas fa-external-link-alt text-xs"></i></button>
+                <button onclick="toggleMinimizeCall()" class="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white active:scale-90"><i class="fas fa-compress-alt text-xs" id="minimize-icon"></i></button>
             </div>
+
             <div class="relative w-full aspect-[3/4] bg-black rounded-[1.5rem] overflow-hidden mb-4 mt-12 flex items-center justify-center border border-white/5">
                 <div id="audio-only-remote" class="hidden flex-col items-center justify-center w-full h-full absolute inset-0 z-10 bg-stone-900">
-                    <div id="call-remote-avatar" class="w-28 h-28 bg-stone-800 rounded-full flex items-center justify-center text-6xl overflow-hidden border-[3px] border-neon-cyan shadow-[0_0_30px_rgba(0,243,255,0.3)] animate-pulse">👤</div>
+                    <div id="call-remote-avatar" class="w-28 h-28 bg-stone-800 rounded-full flex items-center justify-center text-6xl overflow-hidden border-[3px] border-neon-cyan animate-pulse">👤</div>
                 </div>
                 <video id="remote-video" autoplay playsinline class="w-full h-full object-cover hidden"></video>
                 <div id="remote-video-loader" class="absolute inset-0 flex flex-col justify-center items-center bg-black/80 z-20">
@@ -237,64 +236,77 @@
                     <span class="text-xs text-neon-cyan font-bold tracking-widest uppercase animate-pulse">Соединение</span>
                 </div>
             </div>
-            <div id="local-video-wrapper" class="relative w-full h-28 bg-black rounded-2xl overflow-hidden mb-4 border border-white/10 shadow-lg">
+            
+            <div id="local-video-wrapper" class="relative w-full h-28 bg-black rounded-2xl overflow-hidden mb-4 border border-white/10">
                 <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
             </div>
+            
             <div class="flex space-x-3">
-                <button onclick="toggleMic()" id="btn-mic" class="flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl text-white transition active:scale-95"><i class="fas fa-microphone"></i></button>
-                <button onclick="toggleVideo()" id="btn-video" class="flex-1 bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-xl text-white transition active:scale-95"><i class="fas fa-video"></i></button>
-                <button onclick="endCall()" class="flex-2 bg-red-600 hover:bg-red-500 px-6 py-4 rounded-2xl font-bold w-full text-xl text-white shadow-[0_0_20px_rgba(220,38,38,0.5)] transition active:scale-95"><i class="fas fa-phone-slash"></i></button>
+                <button onclick="toggleMic()" id="btn-mic" class="flex-1 bg-white/10 p-4 rounded-2xl text-xl text-white active:scale-95"><i class="fas fa-microphone"></i></button>
+                <button onclick="toggleVideo()" id="btn-video" class="flex-1 bg-white/10 p-4 rounded-2xl text-xl text-white active:scale-95"><i class="fas fa-video"></i></button>
+                <button onclick="endCall()" class="flex-2 bg-red-600 px-6 py-4 rounded-2xl font-bold w-full text-xl text-white active:scale-95"><i class="fas fa-phone-slash"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- ВХОДЯЩИЙ -->
-    <div id="incoming-call-modal" class="ui-layer hidden absolute inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+    <!-- ВХОДЯЩИЙ ЗВОНОК -->
+    <div id="incoming-call-modal" class="ui-layer hidden absolute inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50 p-4">
         <div class="glass-panel rounded-[2.5rem] p-10 w-full max-w-sm text-center animate-pop border-t border-white/20">
             <div class="w-36 h-36 rounded-full flex items-center justify-center mx-auto mb-8 text-6xl relative">
                 <div class="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-30" style="animation-duration: 2s;"></div>
-                <div id="incoming-call-icon" class="bg-stone-800 w-full h-full rounded-full flex items-center justify-center relative z-10 text-white overflow-hidden border-[4px] border-green-500 shadow-[0_0_40px_rgba(34,197,94,0.6)]">👤</div>
+                <div id="incoming-call-icon" class="bg-stone-800 w-full h-full rounded-full flex items-center justify-center relative z-10 text-white overflow-hidden border-[4px] border-green-500">👤</div>
             </div>
             <h2 id="incoming-call-title" class="text-[10px] font-black text-green-400 mb-2 uppercase tracking-widest animate-pulse">Входящий вызов</h2>
             <p id="incoming-caller-name" class="text-white text-3xl font-black mb-10 truncate tracking-wide">Имя</p>
             <div class="flex space-x-5">
-                <button onclick="answerCall()" class="flex-1 bg-green-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_30px_rgba(34,197,94,0.5)] text-3xl active:scale-90 transition hover:bg-green-400"><i class="fas fa-phone"></i></button>
-                <button onclick="rejectCall()" class="flex-1 bg-red-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_30px_rgba(239,68,68,0.5)] text-3xl active:scale-90 transition hover:bg-red-400"><i class="fas fa-times"></i></button>
+                <button onclick="answerCall()" class="flex-1 bg-green-500 text-white font-bold py-5 rounded-2xl text-3xl active:scale-90"><i class="fas fa-phone"></i></button>
+                <button onclick="rejectCall()" class="flex-1 bg-red-500 text-white font-bold py-5 rounded-2xl text-3xl active:scale-90"><i class="fas fa-times"></i></button>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. АНИМАЦИЯ
+        // ==========================================
+        // 1. ОПТИМИЗИРОВАННАЯ АНИМАЦИЯ CANVAS
+        // ==========================================
         function initEpicBattle() {
-            const canvas = document.getElementById('epic-battle-canvas'); if (!canvas) return;
-            const ctx = canvas.getContext('2d'); let w, h, particles = [], blocks = [], frameCount = 0, lastTime = 0; const frameInterval = 1000/60;
+            const canvas = document.getElementById('epic-battle-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w, h, particles = [], blocks = [], frameCount = 0;
+            let lastTime = 0; const FPS = 60; const frameInterval = 1000 / FPS;
 
             function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
             window.addEventListener('resize', resize); resize();
 
             function animate(currentTime) {
                 requestAnimationFrame(animate);
-                if (!lastTime) lastTime = currentTime; const dt = currentTime - lastTime;
-                if (dt < frameInterval) return; lastTime = currentTime - (dt % frameInterval);
+                if (!lastTime) lastTime = currentTime;
+                const deltaTime = currentTime - lastTime;
+                if (deltaTime < frameInterval) return;
+                lastTime = currentTime - (deltaTime % frameInterval);
 
-                ctx.clearRect(0, 0, w, h); frameCount++;
+                ctx.clearRect(0, 0, w, h);
+                frameCount++;
 
-                let heroX = w * 0.8; let heroY = h * 0.5 + Math.sin(frameCount * 0.05) * 10;
-                ctx.font = '90px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🐿️', heroX, heroY);
+                let heroX = w * 0.85; let heroY = h * 0.5 + Math.sin(frameCount * 0.05) * 10;
+                ctx.font = '80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('🐿️', heroX, heroY);
 
-                if (frameCount % 60 === 0) blocks.push({ x: -100, y: heroY + (Math.random()*120 - 60), speed: 5 + Math.random()*3, size: 50, destroyed: false });
+                if (frameCount % 60 === 0) blocks.push({ x: -100, y: heroY + (Math.random()*120 - 60), speed: 5 + Math.random()*3, size: 45, destroyed: false });
                 let isHitting = blocks.some(b => !b.destroyed && b.x > heroX - 140 && b.x < heroX);
                 let swordSwing = isHitting ? Math.sin(frameCount * 0.8) * 2.5 : 0;
 
                 for (let i = blocks.length - 1; i >= 0; i--) {
                     let b = blocks[i]; b.x += b.speed;
                     if (!b.destroyed && b.x > heroX - 110 && b.x < heroX) {
-                        b.destroyed = true; for(let j=0; j<25; j++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20, life: 1 });
+                        b.destroyed = true;
+                        // Снижено количество частиц для защиты от лагов на ПК
+                        for(let j=0; j<15; j++) particles.push({ x: b.x, y: b.y, vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15, life: 1 });
                     }
                     if (!b.destroyed) {
                         ctx.fillStyle = '#dc2626'; ctx.fillRect(b.x - b.size/2, b.y - b.size/2, b.size, b.size);
-                        ctx.fillStyle = 'white'; ctx.font = 'bold 16px Arial'; ctx.fillText('РКН', b.x, b.y);
+                        ctx.fillStyle = 'white'; ctx.font = 'bold 14px Arial'; ctx.fillText('РКН', b.x, b.y);
                     } else { blocks.splice(i, 1); }
                 }
 
@@ -304,31 +316,34 @@
                     else { particles.splice(i, 1); }
                 }
 
-                ctx.save(); ctx.translate(heroX - 40, heroY + 10); ctx.rotate(-Math.PI/4 + swordSwing);
-                ctx.fillStyle = '#0ff'; ctx.shadowBlur = 20; ctx.shadowColor = '#0ff'; ctx.fillRect(-5, -100, 10, 100);
-                ctx.fillStyle = '#555'; ctx.shadowBlur = 0; ctx.fillRect(-7, 0, 14, 20); ctx.restore();
+                ctx.save(); ctx.translate(heroX - 35, heroY + 10); ctx.rotate(-Math.PI/4 + swordSwing);
+                ctx.fillStyle = '#0ff'; ctx.fillRect(-4, -90, 8, 90);
+                ctx.fillStyle = '#555'; ctx.fillRect(-6, 0, 12, 18); ctx.restore();
             }
             requestAnimationFrame(animate);
         }
-        try { initEpicBattle(); } catch(e) {}
 
-        // 2. БРОНЕБОЙНАЯ ЛОГИКА
+        try { initEpicBattle(); } catch(e) { console.warn("Canvas animation error", e); }
+
+        // ==========================================
+        // 2. ЖЕЛЕЗОБЕТОННАЯ СЕТЬ (ОБХОД БЛОКИРОВОК)
+        // ==========================================
         let userProfile = null, chatHistories = {}; 
         
         function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
         function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) {} }
 
         try {
-            const savedUser = safeGetItem('chipmunk_neon_user');
+            const savedUser = safeGetItem('chipmunk_stable_user');
             if (savedUser) {
                 userProfile = JSON.parse(savedUser);
-                // Мгновенная генерация постоянного ID, чтобы не ждать сервер
-                if (!userProfile.peerId) {
-                    userProfile.peerId = 'chp_' + Math.random().toString(36).substr(2, 9);
-                    safeSetItem('chipmunk_neon_user', JSON.stringify(userProfile));
+                // Генерируем уникальный, чистый буквенно-цифровой ID
+                if (!userProfile.peerId || userProfile.peerId.length < 5) {
+                    userProfile.peerId = 'chp_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                    safeSetItem('chipmunk_stable_user', JSON.stringify(userProfile));
                 }
             }
-            const savedHist = safeGetItem('chipmunk_neon_histories'); if (savedHist) chatHistories = JSON.parse(savedHist);
+            const savedHist = safeGetItem('chipmunk_stable_histories'); if (savedHist) chatHistories = JSON.parse(savedHist);
         } catch(e) {}
 
         let peer = null, dataConnection = null, mediaConnection = null, localStream = null;
@@ -345,7 +360,7 @@
             setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]'), 3000);
         }
         
-        function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-2 shadow-[0_0_8px_${c==='text-neon-cyan'?'#00f3ff':(c==='text-yellow-400'?'#eab308':'#ef4444')}]"></span> <span class="${c}">${t}</span>`; }
+        function setStatus(t, c) { ui.status.innerHTML = `<span class="w-2 h-2 rounded-full ${c.replace('text','bg')} mr-2"></span> <span class="${c}">${t}</span>`; }
         function playMessageSound() { try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(e=>{}); } catch(e){} }
         
         function checkAuth() {
@@ -355,12 +370,12 @@
 
         function loginUser(e) {
             e.preventDefault(); const u = document.getElementById('auth-username').value.trim(); if (!u) return;
-            userProfile = { username: u, avatar: '🐿️', friends: [], peerId: 'chp_' + Math.random().toString(36).substr(2, 9) }; saveProfile(); checkAuth();
+            userProfile = { username: u, avatar: '🐿️', friends: [], peerId: 'chp_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36) }; saveProfile(); checkAuth();
         }
 
-        function logout() { if (peer) peer.destroy(); safeSetItem('chipmunk_neon_user', ''); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
-        function saveProfile() { safeSetItem('chipmunk_neon_user', JSON.stringify(userProfile)); }
-        function saveHistories() { safeSetItem('chipmunk_neon_histories', JSON.stringify(chatHistories)); }
+        function logout() { if (peer) peer.destroy(); safeSetItem('chipmunk_stable_user', ''); userProfile = null; document.getElementById('settings-modal').classList.add('hidden'); checkAuth(); }
+        function saveProfile() { safeSetItem('chipmunk_stable_user', JSON.stringify(userProfile)); }
+        function saveHistories() { safeSetItem('chipmunk_stable_histories', JSON.stringify(chatHistories)); }
         function formatAvatarHTML(d) { return d && d.startsWith('data:image') ? `<img src="${d}" class="avatar-img">` : (d || '👤'); }
 
         function applyProfile() {
@@ -384,9 +399,31 @@
             document.getElementById('friend-profile-id').innerText = f.id; document.getElementById('friend-profile-modal').classList.remove('hidden');
         }
         function closeFriendProfile() { document.getElementById('friend-profile-modal').classList.add('hidden'); }
-        function copyFriendId() { navigator.clipboard.writeText(currentChatFriendId||document.getElementById('my-id').value); showToast('ID скопирован!'); }
-        function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').value); showToast('Ваш ID скопирован!'); }
-        function requestNotificationPermission() { try { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); } catch(e) {} }
+        
+        function copyFriendId() { 
+            const textToCopy = currentChatFriendId || document.getElementById('my-id').value;
+            if(navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(()=>showToast('Скопировано!')).catch(()=>fallbackCopy(textToCopy));
+            } else { fallbackCopy(textToCopy); }
+        }
+        function copyId() { 
+            const textToCopy = document.getElementById('my-id').value;
+            if(navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy).then(()=>showToast('Ваш ID скопирован!')).catch(()=>fallbackCopy(textToCopy));
+            } else { fallbackCopy(textToCopy); }
+        }
+        function fallbackCopy(text) {
+            let textArea = document.createElement("textarea"); textArea.value = text;
+            textArea.style.position = "fixed"; textArea.style.left = "-999999px"; textArea.style.top = "-999999px";
+            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            try { document.execCommand('copy'); showToast('Скопировано!'); } catch (err) { showToast('Ошибка копирования', 'error'); }
+            document.body.removeChild(textArea);
+        }
+
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) return showToast("Уведомления не поддерживаются в этом браузере", "error");
+            try { Notification.requestPermission().then(p => { if(p==="granted") showToast("Уведомления включены!"); }); } catch(e) {}
+        }
 
         function addOrUpdateFriend(id, name, avatar) {
             if (id === document.getElementById('my-id').value) return; let f = userProfile.friends.find(f => f.id === id);
@@ -421,7 +458,7 @@
 
         function loadHistoryUI(id) {
             const div = document.getElementById('chat-history'); 
-            div.innerHTML = '<div class="flex flex-col items-center justify-center my-4"><span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,243,255,0.2)]">P2P Канал Защищен 🔒</span></div>';
+            div.innerHTML = '<div class="flex flex-col items-center justify-center my-4"><span class="bg-black/40 border border-white/10 text-neon-cyan text-[10px] px-4 py-2 rounded-full text-center font-bold tracking-widest uppercase">P2P Канал Защищен 🔒</span></div>';
             if (id && chatHistories[id]) chatHistories[id].forEach(m => renderMessageUI(m.text, m.sender, new Date(m.timestamp), m.file));
         }
 
@@ -429,48 +466,59 @@
             if (typeof Peer === 'undefined') { showToast('Ошибка: PeerJS не загружена', 'error'); return; }
             
             let myId = userProfile.peerId;
-            document.getElementById('my-id').value = myId; // Мгновенный показ ID
+            document.getElementById('my-id').value = 'Подключение к сети...';
+            setStatus('Connecting...', 'text-yellow-400');
+
+            // Таймер для отлова глухой блокировки мобильного оператора
+            let connectTimeout = setTimeout(() => {
+                if(document.getElementById('my-id').value === 'Подключение к сети...') {
+                    document.getElementById('my-id').value = 'Блокировка сети оператором';
+                    setStatus('VPN/Сбой', 'text-red-500');
+                    showToast('Отключите VPN или смените сеть', 'error');
+                }
+            }, 8000);
 
             try {
-                // Добавляем мощные TURN-серверы для пробития мобильного интернета (4G/LTE)
+                // Принудительно подключаемся по защищенному порту 443 (ОБХОД БЛОКИРОВОК)
                 peer = new Peer(myId, { 
-                    debug: 2,
+                    host: '0.peerjs.com',
+                    port: 443,
+                    secure: true,
+                    debug: 1, 
+                    pingInterval: 5000,
                     config: { 
                         iceServers: [
                             { urls: 'stun:stun.l.google.com:19302' }, 
-                            { urls: 'stun:stun.cloudflare.com:3478' },
-                            { 
-                                urls: 'turn:openrelay.metered.ca:80', 
-                                username: 'openrelayproject', 
-                                credential: 'openrelayproject' 
-                            },
-                            { 
-                                urls: 'turn:openrelay.metered.ca:443', 
-                                username: 'openrelayproject', 
-                                credential: 'openrelayproject' 
-                            },
-                            { 
-                                urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
-                                username: 'openrelayproject', 
-                                credential: 'openrelayproject' 
-                            }
+                            { urls: 'stun:stun1.l.google.com:19302' }
                         ] 
                     }
                 });
-            } catch(e) { showToast('Сбой создания сети', 'error'); return; }
+            } catch(e) { clearTimeout(connectTimeout); showToast('Сбой создания сети', 'error'); return; }
             
-            peer.on('open', (id) => { setStatus('Online', 'text-neon-cyan'); });
-            peer.on('disconnected', () => { setStatus('Переподключение...', 'text-yellow-400'); if (!peer.destroyed) setTimeout(() => peer.reconnect(), 3000); });
+            peer.on('open', (id) => { 
+                clearTimeout(connectTimeout);
+                document.getElementById('my-id').value = id; 
+                setStatus('Online', 'text-neon-cyan'); 
+            });
             
-            // Улучшенный отлов ошибок (чтобы точно знать причину)
+            peer.on('disconnected', () => { 
+                setStatus('Сбой сети...', 'text-red-500'); 
+                if (!peer.destroyed) setTimeout(() => {
+                    setStatus('Переподключение...', 'text-yellow-400');
+                    peer.reconnect();
+                }, 2000); 
+            });
+            
             peer.on('error', (err) => {
                 console.error("Peer error:", err);
+                clearTimeout(connectTimeout);
                 if (err.type === 'peer-unavailable') {
                     showToast('Собеседник не найден или закрыл сайт', 'error');
                     setStatus('Online', 'text-neon-cyan');
-                } else if (err.type === 'network' || err.type === 'server-error') {
-                    setStatus('Сбой сети', 'text-red-500');
-                    showToast('Ошибка сервера связи', 'error');
+                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'browser-incompatible') {
+                    setStatus('Сбой (Проверьте интернет)', 'text-red-500');
+                    document.getElementById('my-id').value = 'Ошибка: ' + err.type;
+                    showToast('Сбой соединения', 'error');
                 }
             });
             
@@ -485,9 +533,12 @@
                         let textToSave = d.type === 'file' ? `📁 ${d.file.fileName}` : d.text;
                         if (!chatHistories[incomingConn.peer]) chatHistories[incomingConn.peer] = [];
                         chatHistories[incomingConn.peer].push({ text: textToSave, sender: 'them', timestamp: Date.now(), file: d.file }); saveHistories();
+                        
                         if (currentChatFriendId === incomingConn.peer) renderMessageUI(textToSave, 'them', new Date(), d.file);
-                        else showToast(`Сообщение от ${d.senderName || 'друга'}`);
-                        playMessageSound(); try { if (Notification.permission === "granted" && document.hidden) new Notification(userProfile.friends.find(f => f.id === incomingConn.peer)?.name || 'Сообщение', { body: textToSave, icon: '🐿️' }); } catch(e){}
+                        else showToast(`Новое сообщение от ${d.senderName || 'друга'}`);
+                        
+                        playMessageSound(); 
+                        try { if (Notification.permission === "granted" && document.hidden) new Notification(userProfile.friends.find(f => f.id === incomingConn.peer)?.name || 'Сообщение', { body: textToSave, icon: '🐿️' }); } catch(e){}
                     }
                 });
             });
@@ -524,7 +575,10 @@
             dataConnection.on('error', () => { showToast('Сбой', 'error'); setStatus('Online', 'text-neon-cyan'); });
         }
 
-        function closeChat() { if (dataConnection) { dataConnection.close(); dataConnection = null; } currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); }
+        function closeChat() { 
+            if (dataConnection) { dataConnection.close(); dataConnection = null; } 
+            currentChatFriendId = null; ui.viewChat.classList.add('hidden'); ui.viewContacts.classList.remove('hidden'); setStatus('Online', 'text-neon-cyan'); 
+        }
 
         function sendMessage(e) {
             e.preventDefault(); const txt = document.getElementById('chat-input').value.trim(); if (!txt || !dataConnection || !dataConnection.open) return;
@@ -546,11 +600,12 @@
                     chatHistories[currentChatFriendId].push({ text: `📁 ${file.name}`, sender: 'me', timestamp: Date.now(), file: fileObj }); 
                     saveHistories(); renderMessageUI(`📁 ${file.name}`, 'me', new Date(), fileObj);
                 } else { showToast('Собеседник оффлайн', 'error'); }
-            }; reader.readAsDataURL(file); e.target.value = '';
+            }; 
+            reader.readAsDataURL(file); e.target.value = '';
         }
 
         function renderMessageUI(txt, s, d, fileObj = null) {
-            const isMe = s === 'me'; const div = document.createElement('div'); div.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'} animate-pop`;
+            const isMe = s === 'me'; const div = document.createElement('div'); div.className = `flex w-full mb-4 ${isMe ? 'justify-end' : 'justify-start'}`;
             let contentHtml = txt;
             if (fileObj) {
                 if (fileObj.fileType.startsWith('image/')) contentHtml = `<img src="${fileObj.data}" class="max-w-full rounded-xl mb-2 cursor-pointer hover:opacity-80 border border-white/10 shadow-lg" onclick="window.open('${fileObj.data}', '_blank')"><p class="text-[10px] truncate w-32 sm:w-48 font-mono">${fileObj.fileName}</p>`;
@@ -582,7 +637,20 @@
         }
 
         async function startCall(type) { if (!dataConnection || !dataConnection.open) return showToast('Сначала начните чат', 'error'); if (!(await getMediaAccess(type))) return; currentCallType = type; setCallUI(type); setupMediaConnection(peer.call(dataConnection.peer, localStream, { metadata: { type: type } })); }
-        async function answerCall() { try{ringtoneAudio.pause();}catch(e){} document.getElementById('incoming-call-modal').classList.add('hidden'); if (!(await getMediaAccess(currentCallType))) { if (incomingCallRef) incomingCallRef.close(); return; } if (incomingCallRef) { currentChatFriendId = incomingCallRef.peer; setCallUI(currentCallType); incomingCallRef.answer(localStream); setupMediaConnection(incomingCallRef); incomingCallRef = null; } }
+        
+        async function answerCall() { 
+            try{ringtoneAudio.pause();}catch(e){} 
+            document.getElementById('incoming-call-modal').classList.add('hidden'); 
+            if (!(await getMediaAccess(currentCallType))) { if (incomingCallRef) incomingCallRef.close(); return; } 
+            if (incomingCallRef) { 
+                currentChatFriendId = incomingCallRef.peer; 
+                setCallUI(currentCallType); 
+                incomingCallRef.answer(localStream); 
+                setupMediaConnection(incomingCallRef); 
+                incomingCallRef = null; 
+            } 
+        }
+        
         function rejectCall() { try{ringtoneAudio.pause();}catch(e){} document.getElementById('incoming-call-modal').classList.add('hidden'); if (incomingCallRef) { incomingCallRef.close(); incomingCallRef = null; } }
 
         function setupMediaConnection(c) { mediaConnection = c; c.on('stream', (s) => { const v = document.getElementById('remote-video'); if(v.srcObject !== s){ v.srcObject = s; document.getElementById('remote-video-loader').classList.add('hidden'); } }); c.on('close', endCallLocally); c.on('error', endCallLocally); }
